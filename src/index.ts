@@ -1,7 +1,7 @@
-import { MikroORM } from "@mikro-orm/core";
+// import { MikroORM } from "@mikro-orm/core";
 
-const main = async () => {
-  const orm = await MikroORM.init();
-};
+// const main = async () => {
+//   const orm = await MikroORM.init();
+// };
 
-console.log("hello THere");
+console.log("hello There");
