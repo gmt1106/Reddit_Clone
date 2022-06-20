@@ -1,0 +1,3 @@
+In next.js, there is a pages folder. 
+For all the tsx files in the pages folder, the name of the file is automatically a route. 
+ex)localhost:3000/register
