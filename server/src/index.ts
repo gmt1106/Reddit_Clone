@@ -14,8 +14,10 @@ import * as redis from "redis";
 import session from "express-session";
 import connectRedis from "connect-redis";
 import { Context } from "./types";
+// to set cors globally in express middleware not in apollo server middleware
+import cors from "cors";
 
-// things I want to store in session
+// things you want to store in session
 declare module "express-session" {
   interface SessionData {
     userId: number;
@@ -54,6 +56,17 @@ const main = async () => {
   const redisClient = redis.createClient({ legacyMode: true });
   redisClient.connect().catch(console.error);
 
+  // this is to set cors globally in express middleware not in apollo server middleware
+  app.use(
+    // this way cors will be applied to all routes
+    // if you don't want that, you need to specify the route that you want
+    // ex) '/'
+    cors({
+      credentials: true,
+      origin: "http://localhost:3000",
+    })
+  );
+
   app.use(
     session({
       name: "myCookies",
@@ -64,17 +77,17 @@ const main = async () => {
         httpOnly: true, // from the javascript code in the frontend, can't access the cookie
         // sameSite: "lax", // csrf
         // secure: __prod__, // cookie only wors in https. Off when it is connect to local host
-        // This is for setting the Apollo Studio to allow cookies
+        // this is a setting for the Apollo Studio to send cookies
         sameSite: "none",
         secure: true,
       },
-      saveUninitialized: false, // means it will create session by default even if I didn't store any data in it
+      saveUninitialized: false, // means it will create session by default even if you didn't store any data in it
       secret: "kadfljskdjfiwoenvskdnvkdsgjlei",
       resave: false,
     })
   );
 
-  // This is for setting the Apollo Studio to allow cookies
+  // this is a setting for the Apollo Studio to send cookies
   app.set("trust proxy", !__prod__);
 
   // make graphql end point
@@ -93,13 +106,31 @@ const main = async () => {
   await apolloServer.start();
   apolloServer.applyMiddleware({
     app,
-    // This is for setting the Apollo Studio to allow cookies
-    cors: { credentials: true, origin: "https://studio.apollographql.com" },
+    // this is a setting for the Apollo Studio to send cookies
+    // cors: { credentials: true, origin: "https://studio.apollographql.com" },
+
+    // this is a setting for the next.js app local host to send cookies
+    // cors: { credentials: true, origin: "http://localhost:3000" },
+
+    // possile erorr messages:
+    // Access to fetch at 'http://localhost:4000/graphql' from origin 'http://localhost:3000' has been blocked by CORS policy:
+    // Response to preflight request doesn't pass access control check:
+    // The value of the 'Access-Control-Allow-Origin' header in the response must not be the wildcard '*' when
+    // the request's credentials mode is 'include'.
+
+    // Access to fetch at 'http://localhost:4000/graphql' from origin 'http://localhost:3000' has been blocked by CORS policy:
+    // Response to preflight request doesn't pass access control check: The 'Access-Control-Allow-Origin' header has a value
+    // 'https://studio.apollographql.com' that is not equal to the supplied origin.
+    // Have the server send the header with a valid value, or, if an opaque response serves your needs,
+    // set the request's mode to 'no-cors' to fetch the resource with CORS disabled.
+
+    // this is to set cors globally in express middleware not in apollo server middleware
+    cors: false,
   });
 
   //start local host 4000
   app.listen(4000, () => {
-    console.log("server started on localhost:4000");
+    console.log("🚀 server started on localhost:4000");
   });
 };
 

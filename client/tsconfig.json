@@ -8,7 +8,7 @@
     ],
     "allowJs": true,
     "skipLibCheck": true,
-    "strict": false,
+    "strict": true,  // let you auto complete from optional chaining 
     "forceConsistentCasingInFileNames": true,
     "noEmit": true,
     "esModuleInterop": true,
