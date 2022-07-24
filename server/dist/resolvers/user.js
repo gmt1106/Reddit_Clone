@@ -87,14 +87,12 @@ let UserResolver = class UserResolver {
                 ],
             };
         }
-        const createdAt = new Date();
-        const updatedAt = new Date();
         const hashedPassword = await argon2_1.default.hash(registerInput.password);
         const user = em.create(User_1.User, {
             username: registerInput.username,
             password: hashedPassword,
-            createdAt: createdAt,
-            updatedAt: updatedAt,
+            createdAt: new Date(),
+            updatedAt: new Date(),
         });
         try {
             await em.persistAndFlush(user);
@@ -138,9 +136,7 @@ let UserResolver = class UserResolver {
             };
         }
         req.session.userId = user.id;
-        return {
-            user,
-        };
+        return { user };
     }
 };
 __decorate([

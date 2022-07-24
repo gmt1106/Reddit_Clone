@@ -4,6 +4,8 @@ import { Box, Button } from "@chakra-ui/react";
 import { Wrapper } from "../components/Wrapper";
 import { InputField } from "../components/InputField";
 import { useRegisterMutation } from "../generated/graphql";
+import { toErrorMap } from "../utils/toErrorMap";
+import { useRouter } from "next/router";
 
 interface registerProps {}
 
@@ -23,6 +25,7 @@ interface registerProps {}
 //   }
 // }`;
 export const Register: React.FC<registerProps> = ({}) => {
+  const router = useRouter();
   // // urql hook
   // // first return value is information about what is going on with the mutation ex) data, fetching, error, ...
   // // second return value is the mutation function that you can use in the code
@@ -41,12 +44,17 @@ export const Register: React.FC<registerProps> = ({}) => {
           // so you don't have to change anything
           // otherwise, need to pass {username: values.username, password: values.password}
           const response = await register(values);
+          console.log(response);
           // handle error
           if (response.data?.register.errors) {
             // from formik that set error for each input
-            setErrors({
-              username: "error", // this is the error message for username input
-            });
+            // setErrors({
+            //   username: "error", // this is the error message for username input
+            // });
+            setErrors(toErrorMap(response.data.register.errors));
+          } else if (response.data?.register.user) {
+            // if everything else worked correctly then go back to the homepage
+            router.push("/");
           }
         }}
       >

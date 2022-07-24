@@ -12,11 +12,12 @@ exports.default = {
     migrations: {
         path: path_1.default.join(__dirname, "./migrations"),
         pattern: /^[\w-]+\d+\.[tj]s$/,
+        disableForeignKeys: false,
     },
     entities: [post_1.Post, User_1.User],
-    dbName: "lireddit",
-    user: "postgres",
-    password: "Juho19971106",
+    dbName: "redditclone",
+    user: "redditclone",
+    password: "redditclone1106",
     type: "postgresql",
     debug: !constants_1.__prod__,
 };

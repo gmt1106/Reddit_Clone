@@ -11,6 +11,7 @@ import {
 } from "type-graphql";
 import { User } from "../entities/User";
 import argon2 from "argon2";
+import { EntityManager } from "@mikro-orm/postgresql";
 
 // argument or resolvers
 // InputType is for an arugment
@@ -86,20 +87,28 @@ export class UserResolver {
         ],
       };
     }
-    const createdAt = new Date();
-    const updatedAt = new Date();
 
     // encrypt the password
     const hashedPassword = await argon2.hash(registerInput.password);
     const user = em.create(User, {
       username: registerInput.username,
       password: hashedPassword,
-      createdAt: createdAt,
-      updatedAt: updatedAt,
+      createdAt: new Date(),
+      updatedAt: new Date(),
     });
 
     try {
       await em.persistAndFlush(user);
+      // // using MikroOrm query builder instead of persistAndFlush
+      // // cast em as EntityManager
+      // const result = await(em as EntityManager)
+      //   .createQueryBuilder(User)
+      //   .insert({
+      //     username: registerInput.username,
+      //     password: hashedPassword,
+      //     createdAt: new Date(),
+      //     updatedAt: new Date(),
+      //   }).returning("*");
     } catch (err) {
       // duplicate username err
       if (err.code === "23505") {
@@ -185,8 +194,6 @@ export class UserResolver {
     */
 
     // found a matching user and the password is correct
-    return {
-      user,
-    };
+    return { user };
   }
 }

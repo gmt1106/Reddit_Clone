@@ -9,11 +9,12 @@ export default {
   migrations: {
     path: path.join(__dirname, "./migrations"), // path to the folder with migrations. __dirname = absolute path to the directory of this file.
     pattern: /^[\w-]+\d+\.[tj]s$/, // deal with both typescript and javascript
+    disableForeignKeys: false,
   },
   entities: [Post, User],
-  dbName: "lireddit",
-  user: "postgres",
-  password: "Juho19971106",
+  dbName: "redditclone",
+  user: "redditclone",
+  password: "redditclone1106",
   type: "postgresql",
   debug: !__prod__,
 } as Parameters<typeof MikroORM.init>[0]; // control + space = let you knwo what you can add
