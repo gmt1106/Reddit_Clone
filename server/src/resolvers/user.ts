@@ -90,25 +90,30 @@ export class UserResolver {
 
     // encrypt the password
     const hashedPassword = await argon2.hash(registerInput.password);
-    const user = em.create(User, {
-      username: registerInput.username,
-      password: hashedPassword,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    });
+    let user;
+    // = em.create(User, {
+    //   username: registerInput.username,
+    //   password: hashedPassword,
+    //   createdAt: new Date(),
+    //   updatedAt: new Date(),
+    // });
 
     try {
-      await em.persistAndFlush(user);
-      // // using MikroOrm query builder instead of persistAndFlush
-      // // cast em as EntityManager
-      // const result = await(em as EntityManager)
-      //   .createQueryBuilder(User)
-      //   .insert({
-      //     username: registerInput.username,
-      //     password: hashedPassword,
-      //     createdAt: new Date(),
-      //     updatedAt: new Date(),
-      //   }).returning("*");
+      // await em.persistAndFlush(user);
+
+      // using MikroOrm query builder instead of persistAndFlush
+      // cast em as EntityManager
+      const result = await (em as EntityManager)
+        .createQueryBuilder(User)
+        .getKnexQuery()
+        .insert({
+          username: registerInput.username,
+          password: hashedPassword,
+          created_at: new Date(),
+          updated_at: new Date(),
+        })
+        .returning("*");
+      user = result[0];
     } catch (err) {
       // duplicate username err
       if (err.code === "23505") {

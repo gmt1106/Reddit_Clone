@@ -56,14 +56,14 @@ const main = async () => {
   const redisClient = redis.createClient({ legacyMode: true });
   redisClient.connect().catch(console.error);
 
-  // ********** this is to set cors globally in express middleware not in apollo server middleware **********
+  // ********** this is a setting for the Apollo Studio and next.js app local host to connect server by settting cors globally in express middleware **********
   app.use(
     // this way cors will be applied to all routes
     // if you don't want that, you need to specify the route that you want
     // ex) '/'
     cors({
       credentials: true,
-      origin: "http://localhost:3000",
+      origin: ["http://localhost:3000", "https://studio.apollographql.com"],
     })
   );
 
@@ -106,13 +106,13 @@ const main = async () => {
   await apolloServer.start();
   apolloServer.applyMiddleware({
     app,
-    // ********** this is a setting for the Apollo Studio and next.js app local host to send cookies **********
+    // ********** this is a setting for the Apollo Studio and next.js app local host to connect server by settting cors in apollo server middleware **********
     // cors: {
     //   credentials: true,
     //   origin: ["http://localhost:3000", "https://studio.apollographql.com"],
     // },
 
-    // ********** this is to set cors globally in express middleware not in apollo server middleware **********
+    // ********** this is a setting for the Apollo Studio and next.js app local host to connect server by settting cors globally in express middleware **********
     cors: false,
   });
 

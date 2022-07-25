@@ -43,8 +43,7 @@ export const Register: React.FC<registerProps> = ({}) => {
           // values' keys line up exactly with the mutation function variable ex) username, password
           // so you don't have to change anything
           // otherwise, need to pass {username: values.username, password: values.password}
-          const response = await register(values);
-          console.log(response);
+          const response = await register({ registerInput: values });
           // handle error
           if (response.data?.register.errors) {
             // from formik that set error for each input
@@ -91,5 +90,5 @@ export const Register: React.FC<registerProps> = ({}) => {
 export default Register;
 // In next.js have to exprot default the component.
 // If you are only exporting a single class or function, use export default.
-// If a module’s primary purpose is to house one specific export, then you should consider exporting it as a default export.
+// Also if a module’s primary purpose is to house one specific export, then you should consider exporting it as a default export.
 // This makes both importing and actually using the import a little easier.

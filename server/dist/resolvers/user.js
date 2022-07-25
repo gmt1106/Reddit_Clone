@@ -88,14 +88,19 @@ let UserResolver = class UserResolver {
             };
         }
         const hashedPassword = await argon2_1.default.hash(registerInput.password);
-        const user = em.create(User_1.User, {
-            username: registerInput.username,
-            password: hashedPassword,
-            createdAt: new Date(),
-            updatedAt: new Date(),
-        });
+        let user;
         try {
-            await em.persistAndFlush(user);
+            const result = await em
+                .createQueryBuilder(User_1.User)
+                .getKnexQuery()
+                .insert({
+                username: registerInput.username,
+                password: hashedPassword,
+                created_at: new Date(),
+                updated_at: new Date(),
+            })
+                .returning("*");
+            user = result[0];
         }
         catch (err) {
             if (err.code === "23505") {

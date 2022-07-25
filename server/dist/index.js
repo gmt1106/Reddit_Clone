@@ -48,7 +48,7 @@ const main = async () => {
     redisClient.connect().catch(console.error);
     app.use((0, cors_1.default)({
         credentials: true,
-        origin: "http://localhost:3000",
+        origin: ["http://localhost:3000", "https://studio.apollographql.com"],
     }));
     app.use((0, express_session_1.default)({
         name: "myCookies",

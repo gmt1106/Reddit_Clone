@@ -1,7 +1,8 @@
 import { ChakraProvider } from "@chakra-ui/react";
-import { createClient, Provider } from "urql";
+import { createClient, dedupExchange, fetchExchange, Provider } from "urql";
 import theme from "../theme";
 import { AppProps } from "next/app";
+import { cacheExchange } from "@urql/exchange-graphcache";
 
 // client is my graphQL server
 const client = createClient({
@@ -9,6 +10,8 @@ const client = createClient({
   fetchOptions: {
     credentials: "include", // send a cookie
   },
+  // The Graphcache package exports the cacheExchange which replaces the default cacheExchange in @urql/core.
+  exchanges: [dedupExchange, cacheExchange({}), fetchExchange],
 });
 
 // cover the app with urql provider
