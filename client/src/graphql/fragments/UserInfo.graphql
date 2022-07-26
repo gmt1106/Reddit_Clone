@@ -1,0 +1,6 @@
+# user {id username} is fetched in register, login mutations and me query.
+# Reduce the repitation by fragment graphql
+fragment UserInfo on User {
+  id
+  username
+}

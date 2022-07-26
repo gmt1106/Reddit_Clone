@@ -135,7 +135,7 @@ export class UserResolver {
     return { user };
   }
 
-  // log in an user
+  // log in as an user
   @Mutation(() => UserResponse)
   async login(
     @Arg("loginInput") loginInput: UsernamePasswordInput,
@@ -200,5 +200,21 @@ export class UserResolver {
 
     // found a matching user and the password is correct
     return { user };
+  }
+
+  // log out
+  @Mutation(() => Boolean)
+  async logout(@Ctx() { req }: Context): Promise<Boolean> {
+    // destroy function removes the session from the redis
+    // this function requires a callback function
+    return new Promise((res) =>
+      req.session.destroy((err) => {
+        if (err) {
+          res(false);
+        } else {
+          res(true);
+        }
+      })
+    );
   }
 }
