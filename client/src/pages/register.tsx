@@ -6,6 +6,8 @@ import { InputField } from "../components/InputField";
 import { useRegisterMutation } from "../generated/graphql";
 import { toErrorMap } from "../utils/toErrorMap";
 import { useRouter } from "next/router";
+import { withUrqlClient } from "next-urql";
+import { createUrqlClient } from "../utils/createUrqlClient";
 
 interface registerProps {}
 
@@ -38,7 +40,7 @@ export const Register: React.FC<registerProps> = ({}) => {
   return (
     <Wrapper variant="small">
       <Formik
-        initialValues={{ username: "", password: "" }}
+        initialValues={{ email: "", username: "", password: "" }}
         onSubmit={async (values, { setErrors }) => {
           // values' keys line up exactly with the mutation function variable ex) username, password
           // so you don't have to change anything
@@ -59,11 +61,14 @@ export const Register: React.FC<registerProps> = ({}) => {
       >
         {({ isSubmitting }) => (
           <Form>
-            <InputField
-              name="username"
-              placeholder="username"
-              label="Username"
-            />
+            <InputField name="email" placeholder="email" label="Email" />
+            <Box mt={4}>
+              <InputField
+                name="username"
+                placeholder="username"
+                label="Username"
+              />
+            </Box>
             <Box mt={4}>
               <InputField
                 name="password"
@@ -87,7 +92,8 @@ export const Register: React.FC<registerProps> = ({}) => {
   );
 };
 
-export default Register;
+// SSR is off
+export default withUrqlClient(createUrqlClient)(Register);
 // In next.js have to exprot default the component.
 // If you are only exporting a single class or function, use export default.
 // Also if a module’s primary purpose is to house one specific export, then you should consider exporting it as a default export.

@@ -3,7 +3,6 @@ import {
   Resolver,
   Mutation,
   Arg,
-  InputType,
   Field,
   Ctx,
   ObjectType,
@@ -12,16 +11,11 @@ import {
 import { User } from "../entities/User";
 import argon2 from "argon2";
 import { EntityManager } from "@mikro-orm/postgresql";
-
-// argument or resolvers
-// InputType is for an arugment
-@InputType()
-class UsernamePasswordInput {
-  @Field()
-  username: string;
-  @Field()
-  password: string;
-}
+import { COOKIE_NAME, FORGOT_PASSWORD_PREFIX } from "../constants";
+import { RegisterInput } from "./RegisterInput";
+import { validateRegister } from "../utils/validateRegister";
+import { sendEmail } from "../utils/sendEmail";
+import { v4 as uuidv4 } from "uuid";
 
 // ObjectType is for a return value
 @ObjectType()
@@ -62,32 +56,14 @@ export class UserResolver {
   // Register an user
   @Mutation(() => UserResponse)
   async register(
-    @Arg("registerInput") registerInput: UsernamePasswordInput,
+    @Arg("registerInput") registerInput: RegisterInput,
     @Ctx() { em, req }: Context
   ): Promise<UserResponse> {
-    // username shouldn't be empty
-    if (registerInput.username.length <= 2) {
-      return {
-        errors: [
-          {
-            field: "username",
-            message: "length must be greater than 2",
-          },
-        ],
-      };
+    // validate registerinput
+    const errors = validateRegister(registerInput);
+    if (errors) {
+      return { errors };
     }
-    // password shouldn't be empty
-    if (registerInput.password.length <= 2) {
-      return {
-        errors: [
-          {
-            field: "password",
-            message: "length must be greater than 2",
-          },
-        ],
-      };
-    }
-
     // encrypt the password
     const hashedPassword = await argon2.hash(registerInput.password);
     let user;
@@ -109,6 +85,7 @@ export class UserResolver {
         .insert({
           username: registerInput.username,
           password: hashedPassword,
+          email: registerInput.email,
           created_at: new Date(),
           updated_at: new Date(),
         })
@@ -138,23 +115,29 @@ export class UserResolver {
   // log in as an user
   @Mutation(() => UserResponse)
   async login(
-    @Arg("loginInput") loginInput: UsernamePasswordInput,
+    @Arg("usernameOrEmail") usernameOrEmail: string,
+    @Arg("password") password: string,
     @Ctx() { em, req }: Context
   ): Promise<UserResponse> {
-    const user = await em.findOne(User, { username: loginInput.username });
+    const user = await em.findOne(
+      User,
+      usernameOrEmail.includes("@")
+        ? { email: usernameOrEmail }
+        : { username: usernameOrEmail }
+    );
     // handle error when no user is not found
     if (!user) {
       return {
         // handle more than one error
         errors: [
           {
-            field: "username",
-            message: "that username doesn't exist",
+            field: "usernameOrEmail",
+            message: "that username or email doesn't exist",
           },
         ],
       };
     }
-    const valid = await argon2.verify(user.password, loginInput.password);
+    const valid = await argon2.verify(user.password, password);
     // handle error when the password is incorrect
     if (!valid) {
       return {
@@ -204,17 +187,54 @@ export class UserResolver {
 
   // log out
   @Mutation(() => Boolean)
-  async logout(@Ctx() { req }: Context): Promise<Boolean> {
+  async logout(@Ctx() { req, res }: Context): Promise<Boolean> {
     // destroy function removes the session from the redis
     // this function requires a callback function
-    return new Promise((res) =>
+    return new Promise((resolve, _reject) =>
       req.session.destroy((err) => {
+        // clear cookie
+        // still wants to clear the cookie even if destroying the session is failed
+        res.clearCookie(COOKIE_NAME);
         if (err) {
-          res(false);
-        } else {
-          res(true);
+          console.log(err);
+          resolve(false);
+          return;
         }
+        resolve(true);
       })
     );
+  }
+
+  // change password because user forgot his password
+  @Mutation(() => Boolean)
+  async forgotPassword(
+    @Arg("email") email: string,
+    @Ctx() { em, redis }: Context
+  ): Promise<Boolean> {
+    const user = await em.findOne(User, { email: email });
+    if (!user) {
+      // user with the given email is not found in the database
+      // but for scurity reason we don't want to let the user know this
+      return true;
+    }
+    // user is found, so send him an email
+    // With in the email, I will send a special link which will take the user to the website that the user can reset the password
+    // In the link I need to put a token which will be used to validate the user who is accessing the webpage
+    // The token can be generated using uuid
+    const token = uuidv4();
+    // store the token in redis with user.id
+    await redis.set(
+      FORGOT_PASSWORD_PREFIX + token,
+      user.id,
+      "EX",
+      1000 * 60 * 60 * 24 * 3
+    ); // expire after 3 days
+    // when the user access the link and change the password, it will send the token back to me,
+    // and I can look up the user id with that token
+    await sendEmail(
+      email,
+      `<a href="http://localhost:3000/change-password/${token}">reset passwrod</a>`
+    );
+    return true;
   }
 }

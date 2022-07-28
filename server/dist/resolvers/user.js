@@ -19,19 +19,11 @@ exports.UserResolver = void 0;
 const type_graphql_1 = require("type-graphql");
 const User_1 = require("../entities/User");
 const argon2_1 = __importDefault(require("argon2"));
-let UsernamePasswordInput = class UsernamePasswordInput {
-};
-__decorate([
-    (0, type_graphql_1.Field)(),
-    __metadata("design:type", String)
-], UsernamePasswordInput.prototype, "username", void 0);
-__decorate([
-    (0, type_graphql_1.Field)(),
-    __metadata("design:type", String)
-], UsernamePasswordInput.prototype, "password", void 0);
-UsernamePasswordInput = __decorate([
-    (0, type_graphql_1.InputType)()
-], UsernamePasswordInput);
+const constants_1 = require("../constants");
+const RegisterInput_1 = require("./RegisterInput");
+const validateRegister_1 = require("../utils/validateRegister");
+const sendEmail_1 = require("../utils/sendEmail");
+const uuid_1 = require("uuid");
 let FieldError = class FieldError {
 };
 __decorate([
@@ -67,25 +59,9 @@ let UserResolver = class UserResolver {
         return user;
     }
     async register(registerInput, { em, req }) {
-        if (registerInput.username.length <= 2) {
-            return {
-                errors: [
-                    {
-                        field: "username",
-                        message: "length must be greater than 2",
-                    },
-                ],
-            };
-        }
-        if (registerInput.password.length <= 2) {
-            return {
-                errors: [
-                    {
-                        field: "password",
-                        message: "length must be greater than 2",
-                    },
-                ],
-            };
+        const errors = (0, validateRegister_1.validateRegister)(registerInput);
+        if (errors) {
+            return { errors };
         }
         const hashedPassword = await argon2_1.default.hash(registerInput.password);
         let user;
@@ -96,6 +72,7 @@ let UserResolver = class UserResolver {
                 .insert({
                 username: registerInput.username,
                 password: hashedPassword,
+                email: registerInput.email,
                 created_at: new Date(),
                 updated_at: new Date(),
             })
@@ -117,19 +94,21 @@ let UserResolver = class UserResolver {
         req.session.userId = user.id;
         return { user };
     }
-    async login(loginInput, { em, req }) {
-        const user = await em.findOne(User_1.User, { username: loginInput.username });
+    async login(usernameOrEmail, password, { em, req }) {
+        const user = await em.findOne(User_1.User, usernameOrEmail.includes("@")
+            ? { email: usernameOrEmail }
+            : { username: usernameOrEmail });
         if (!user) {
             return {
                 errors: [
                     {
-                        field: "username",
-                        message: "that username doesn't exist",
+                        field: "usernameOrEmail",
+                        message: "that username or email doesn't exist",
                     },
                 ],
             };
         }
-        const valid = await argon2_1.default.verify(user.password, loginInput.password);
+        const valid = await argon2_1.default.verify(user.password, password);
         if (!valid) {
             return {
                 errors: [
@@ -143,15 +122,26 @@ let UserResolver = class UserResolver {
         req.session.userId = user.id;
         return { user };
     }
-    async logout({ req }) {
-        return new Promise((res) => req.session.destroy((err) => {
+    async logout({ req, res }) {
+        return new Promise((resolve, _reject) => req.session.destroy((err) => {
+            res.clearCookie(constants_1.COOKIE_NAME);
             if (err) {
-                res(false);
+                console.log(err);
+                resolve(false);
+                return;
             }
-            else {
-                res(true);
-            }
+            resolve(true);
         }));
+    }
+    async forgotPassword(email, { em, redis }) {
+        const user = await em.findOne(User_1.User, { email: email });
+        if (!user) {
+            return true;
+        }
+        const token = (0, uuid_1.v4)();
+        await redis.set(constants_1.FORGOT_PASSWORD_PREFIX + token, user.id, "EX", 1000 * 60 * 60 * 24 * 3);
+        await (0, sendEmail_1.sendEmail)(email, `<a href="http://localhost:3000/change-password/${token}">reset passwrod</a>`);
+        return true;
     }
 };
 __decorate([
@@ -166,15 +156,16 @@ __decorate([
     __param(0, (0, type_graphql_1.Arg)("registerInput")),
     __param(1, (0, type_graphql_1.Ctx)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [UsernamePasswordInput, Object]),
+    __metadata("design:paramtypes", [RegisterInput_1.RegisterInput, Object]),
     __metadata("design:returntype", Promise)
 ], UserResolver.prototype, "register", null);
 __decorate([
     (0, type_graphql_1.Mutation)(() => UserResponse),
-    __param(0, (0, type_graphql_1.Arg)("loginInput")),
-    __param(1, (0, type_graphql_1.Ctx)()),
+    __param(0, (0, type_graphql_1.Arg)("usernameOrEmail")),
+    __param(1, (0, type_graphql_1.Arg)("password")),
+    __param(2, (0, type_graphql_1.Ctx)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [UsernamePasswordInput, Object]),
+    __metadata("design:paramtypes", [String, String, Object]),
     __metadata("design:returntype", Promise)
 ], UserResolver.prototype, "login", null);
 __decorate([
@@ -184,6 +175,14 @@ __decorate([
     __metadata("design:paramtypes", [Object]),
     __metadata("design:returntype", Promise)
 ], UserResolver.prototype, "logout", null);
+__decorate([
+    (0, type_graphql_1.Mutation)(() => Boolean),
+    __param(0, (0, type_graphql_1.Arg)("email")),
+    __param(1, (0, type_graphql_1.Ctx)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, Object]),
+    __metadata("design:returntype", Promise)
+], UserResolver.prototype, "forgotPassword", null);
 UserResolver = __decorate([
     (0, type_graphql_1.Resolver)()
 ], UserResolver);

@@ -7,7 +7,7 @@ import { Context } from "../types";
 export class PostResolver {
   // get the list of all posts
   @Query(() => [Post]) // setting graphql return type with [Post]
-  posts(@Ctx() { em }: Context): Promise<Post[]> {
+  async posts(@Ctx() { em }: Context): Promise<Post[]> {
     // setting typescript return type with of post in promise
     // want to query everything from the database and return
     // find will return a promise of posts

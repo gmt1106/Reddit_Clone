@@ -27,4 +27,8 @@ export class User {
   // only save in dotabase column
   @Property({ type: "text" })
   password!: string;
+
+  @Field()
+  @Property({ type: "text", unique: true })
+  email!: string;
 }

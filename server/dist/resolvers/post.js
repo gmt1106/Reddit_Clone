@@ -16,7 +16,7 @@ exports.PostResolver = void 0;
 const post_1 = require("../entities/post");
 const type_graphql_1 = require("type-graphql");
 let PostResolver = class PostResolver {
-    posts({ em }) {
+    async posts({ em }) {
         return em.find(post_1.Post, {});
     }
     post(id, { em }) {

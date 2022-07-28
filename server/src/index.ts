@@ -1,6 +1,6 @@
 import "reflect-metadata";
 import { MikroORM } from "@mikro-orm/core";
-import { __prod__ } from "./constants";
+import { COOKIE_NAME, __prod__ } from "./constants";
 import microConfig from "./mikro-orm.config";
 import express from "express";
 // make graphql end point
@@ -10,7 +10,7 @@ import { buildSchema } from "type-graphql";
 import { HelloResolver } from "./resolvers/hello";
 import { PostResolver } from "./resolvers/post";
 import { UserResolver } from "./resolvers/user";
-import * as redis from "redis";
+import Redis from "ioredis";
 import session from "express-session";
 import connectRedis from "connect-redis";
 import { Context } from "./types";
@@ -27,6 +27,8 @@ declare module "express-session" {
 const main = async () => {
   // connect to the database
   const orm = await MikroORM.init(microConfig);
+  // // If you need to reset the database table
+  // await orm.em.nativeDelete(User, {});
   // automatically run the migration in this code
   await orm.getMigrator().up();
 
@@ -53,8 +55,8 @@ const main = async () => {
   // Session middleware will run before apollo middleware.
   // We need becase session middleware will run inside the apollo
   const RedisStore = connectRedis(session);
-  const redisClient = redis.createClient({ legacyMode: true });
-  redisClient.connect().catch(console.error);
+  const redis = new Redis();
+  redis.connect().catch(console.error);
 
   // ********** this is a setting for the Apollo Studio and next.js app local host to connect server by settting cors globally in express middleware **********
   app.use(
@@ -69,9 +71,9 @@ const main = async () => {
 
   app.use(
     session({
-      name: "myCookies",
+      name: COOKIE_NAME,
       // disableTouch ture make the session live forever also reduce the number of request
-      store: new RedisStore({ client: redisClient as any, disableTouch: true }),
+      store: new RedisStore({ client: redis as any, disableTouch: true }),
       cookie: {
         maxAge: 1000 * 60 * 60 * 24 * 365 * 10, // 10 years
         httpOnly: true, // from the javascript code in the frontend, can't access the cookie
@@ -88,7 +90,7 @@ const main = async () => {
   );
 
   // ********** this is a setting for the Apollo Studio to send cookies **********
-  // app.set("trust proxy", !__prod__);
+  app.set("trust proxy", !__prod__);
 
   // make graphql end point
   // need to pass in graphql schema
@@ -99,7 +101,7 @@ const main = async () => {
     }),
     // it is a object that is accessable by all the resolver
     // we can access the session(cookie) inside the resolver by passing in req and res
-    context: ({ req, res }): Context => ({ em: orm.em, req, res }),
+    context: ({ req, res }): Context => ({ em: orm.em, req, res, redis }),
   });
 
   // add graphql end point on express
