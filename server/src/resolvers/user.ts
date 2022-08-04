@@ -12,7 +12,7 @@ import { User } from "../entities/User";
 import argon2 from "argon2";
 import { EntityManager } from "@mikro-orm/postgresql";
 import { COOKIE_NAME, FORGOT_PASSWORD_PREFIX } from "../constants";
-import { RegisterInput } from "./RegisterInput";
+import { RegisterInput } from "./registerInput";
 import { validateRegister } from "../utils/validateRegister";
 import { sendEmail } from "../utils/sendEmail";
 import { v4 as uuidv4 } from "uuid";
@@ -196,7 +196,6 @@ export class UserResolver {
         // still wants to clear the cookie even if destroying the session is failed
         res.clearCookie(COOKIE_NAME);
         if (err) {
-          console.log(err);
           resolve(false);
           return;
         }
@@ -222,11 +221,12 @@ export class UserResolver {
     // In the link I need to put a token which will be used to validate the user who is accessing the webpage
     // The token can be generated using uuid
     const token = uuidv4();
+
     // store the token in redis with user.id
     await redis.set(
       FORGOT_PASSWORD_PREFIX + token,
       user.id,
-      "EX",
+      "PX",
       1000 * 60 * 60 * 24 * 3
     ); // expire after 3 days
     // when the user access the link and change the password, it will send the token back to me,
@@ -236,5 +236,66 @@ export class UserResolver {
       `<a href="http://localhost:3000/change-password/${token}">reset passwrod</a>`
     );
     return true;
+  }
+
+  @Mutation(() => UserResponse)
+  async changePassword(
+    @Arg("token") token: string,
+    @Arg("newPassword") newPassword: string,
+    @Ctx() { em, req, redis }: Context
+  ): Promise<UserResponse> {
+    // password shouldn't be empty
+    if (newPassword.length <= 2) {
+      return {
+        errors: [
+          {
+            field: "newPassword",
+            message: "length must be greater than 2",
+          },
+        ],
+      };
+    }
+
+    // need to check token
+    const key = FORGOT_PASSWORD_PREFIX + token;
+    const userId = await redis.get(key);
+    // There can be two case for userID not being exist. 1. token is expired  2. token is fake
+    if (!userId) {
+      return {
+        errors: [
+          {
+            field: "token",
+            message: "This change password link is expired",
+          },
+        ],
+      };
+    }
+
+    // now the user is found, so change the password
+    const user = await em.findOne(User, { id: parseInt(userId) });
+
+    // user associated with the token no longer exist somehow
+    if (!user) {
+      return {
+        errors: [
+          {
+            field: "token",
+            message: "user no longer exists",
+          },
+        ],
+      };
+    }
+
+    // encrypt the password
+    user.password = await argon2.hash(newPassword);
+    await em.persistAndFlush(user);
+
+    // delete the token from the redis so that user can't reuse the link to change the password
+    redis.del(key);
+
+    // log in the user after change password
+    req.session.userId = user.id;
+
+    return { user };
   }
 }

@@ -26,7 +26,7 @@ interface registerProps {}
 //     }
 //   }
 // }`;
-export const Register: React.FC<registerProps> = ({}) => {
+const Register: React.FC<registerProps> = ({}) => {
   const router = useRouter();
   // // urql hook
   // // first return value is information about what is going on with the mutation ex) data, fetching, error, ...
@@ -61,7 +61,12 @@ export const Register: React.FC<registerProps> = ({}) => {
       >
         {({ isSubmitting }) => (
           <Form>
-            <InputField name="email" placeholder="email" label="Email" />
+            <InputField
+              name="email"
+              placeholder="email"
+              label="Email"
+              type="email"
+            />
             <Box mt={4}>
               <InputField
                 name="username"

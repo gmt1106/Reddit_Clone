@@ -1,0 +1,6 @@
+# errors { field message } is fetched in many mutation.
+# Reduce the repitation by fragment graphql
+fragment Error on FieldError {
+  field
+  message
+}

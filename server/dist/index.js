@@ -23,7 +23,6 @@ const main = async () => {
     const app = (0, express_1.default)();
     const RedisStore = (0, connect_redis_1.default)(express_session_1.default);
     const redis = new ioredis_1.default();
-    redis.connect().catch(console.error);
     app.use((0, cors_1.default)({
         credentials: true,
         origin: ["http://localhost:3000", "https://studio.apollographql.com"],

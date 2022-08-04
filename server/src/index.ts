@@ -56,7 +56,6 @@ const main = async () => {
   // We need becase session middleware will run inside the apollo
   const RedisStore = connectRedis(session);
   const redis = new Redis();
-  redis.connect().catch(console.error);
 
   // ********** this is a setting for the Apollo Studio and next.js app local host to connect server by settting cors globally in express middleware **********
   app.use(

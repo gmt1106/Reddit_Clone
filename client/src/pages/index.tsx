@@ -8,7 +8,6 @@ const Index = () => {
   return (
     <>
       <NavBar />
-      <div>Hello World</div>
       {!data ? (
         <div>loading...</div>
       ) : (
