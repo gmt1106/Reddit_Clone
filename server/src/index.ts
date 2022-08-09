@@ -1,7 +1,6 @@
 import "reflect-metadata";
-import { MikroORM } from "@mikro-orm/core";
+import { DataSource } from "typeorm";
 import { COOKIE_NAME, __prod__ } from "./constants";
-import microConfig from "./mikro-orm.config";
 import express from "express";
 // make graphql end point
 import { ApolloServer } from "apollo-server-express";
@@ -16,6 +15,8 @@ import connectRedis from "connect-redis";
 import { Context } from "./types";
 // to set cors globally in express middleware not in apollo server middleware
 import cors from "cors";
+import { Post } from "./entities/post";
+import { User } from "./entities/User";
 
 // things you want to store in session
 declare module "express-session" {
@@ -26,21 +27,25 @@ declare module "express-session" {
 
 const main = async () => {
   // connect to the database
-  const orm = await MikroORM.init(microConfig);
-  // // If you need to reset the database table
-  // await orm.em.nativeDelete(User, {});
-  // automatically run the migration in this code
-  await orm.getMigrator().up();
+  const appDataSource = new DataSource({
+    type: "postgres",
+    username: "redditclone",
+    password: "redditclone1106",
+    database: "redditclone",
+    entities: [Post, User],
+    synchronize: true, // TypeORM will create table automatically, don't have to run migratioin
+    logging: true,
+  });
 
-  // // run sql
-  // // this create an instance of post class
-  // const post = orm.em.fork({}).create(Post, {title: "my first post", createdAt: new Date(), updatedAt: new Date()});
-  // // insert new post row to database
-  // await orm.em.persistAndFlush(post);
-
-  // // print out the Post that has beed added
-  // const posts = await orm.em.find(Post, {});
-  // console.log(posts);
+  // to initialize initial connection with the database, register all entities
+  // and "synchronize" database schema, call "initialize()" method of a newly created database
+  // once in your application bootstrap
+  appDataSource
+    .initialize()
+    .then(() => {
+      // here you can start to work with your database
+    })
+    .catch((error) => console.log(error));
 
   // express build rest api
   const app = express();
@@ -100,7 +105,7 @@ const main = async () => {
     }),
     // it is a object that is accessable by all the resolver
     // we can access the session(cookie) inside the resolver by passing in req and res
-    context: ({ req, res }): Context => ({ em: orm.em, req, res, redis }),
+    context: ({ req, res }): Context => ({ appDataSource, req, res, redis }),
   });
 
   // add graphql end point on express

@@ -10,7 +10,6 @@ import {
 } from "type-graphql";
 import { User } from "../entities/User";
 import argon2 from "argon2";
-import { EntityManager } from "@mikro-orm/postgresql";
 import { COOKIE_NAME, FORGOT_PASSWORD_PREFIX } from "../constants";
 import { RegisterInput } from "./registerInput";
 import { validateRegister } from "../utils/validateRegister";
@@ -43,21 +42,20 @@ class UserResponse {
 export class UserResolver {
   // Return current loged in user. If no one is logged in, return null.
   @Query(() => User, { nullable: true })
-  async me(@Ctx() { em, req }: Context) {
+  me(@Ctx() { req }: Context) {
     // you are not logged in case
     if (!req.session.userId) {
       return null;
     }
 
-    const user = em.findOne(User, { id: req.session.userId });
-    return user;
+    return User.findOne({ where: { id: req.session.userId } });
   }
 
   // Register an user
   @Mutation(() => UserResponse)
   async register(
     @Arg("registerInput") registerInput: RegisterInput,
-    @Ctx() { em, req }: Context
+    @Ctx() { appDataSource, req }: Context
   ): Promise<UserResponse> {
     // validate registerinput
     const errors = validateRegister(registerInput);
@@ -67,30 +65,25 @@ export class UserResolver {
     // encrypt the password
     const hashedPassword = await argon2.hash(registerInput.password);
     let user;
-    // = em.create(User, {
-    //   username: registerInput.username,
-    //   password: hashedPassword,
-    //   createdAt: new Date(),
-    //   updatedAt: new Date(),
-    // });
 
     try {
-      // await em.persistAndFlush(user);
-
-      // using MikroOrm query builder instead of persistAndFlush
-      // cast em as EntityManager
-      const result = await (em as EntityManager)
-        .createQueryBuilder(User)
-        .getKnexQuery()
-        .insert({
+      // this is the same as
+      // User.create({
+      // username: registerInput.username,
+      // password: hashedPassword,
+      // email: registerInput.email }).save()
+      const result = await appDataSource
+        .createQueryBuilder()
+        .insert()
+        .into(User)
+        .values({
           username: registerInput.username,
           password: hashedPassword,
           email: registerInput.email,
-          created_at: new Date(),
-          updated_at: new Date(),
         })
-        .returning("*");
-      user = result[0];
+        .returning("*")
+        .execute();
+      user = result.raw[0];
     } catch (err) {
       // duplicate username err
       if (err.code === "23505") {
@@ -117,14 +110,13 @@ export class UserResolver {
   async login(
     @Arg("usernameOrEmail") usernameOrEmail: string,
     @Arg("password") password: string,
-    @Ctx() { em, req }: Context
+    @Ctx() { req }: Context
   ): Promise<UserResponse> {
-    const user = await em.findOne(
-      User,
-      usernameOrEmail.includes("@")
+    const user = await User.findOne({
+      where: usernameOrEmail.includes("@")
         ? { email: usernameOrEmail }
-        : { username: usernameOrEmail }
-    );
+        : { username: usernameOrEmail },
+    });
     // handle error when no user is not found
     if (!user) {
       return {
@@ -208,9 +200,9 @@ export class UserResolver {
   @Mutation(() => Boolean)
   async forgotPassword(
     @Arg("email") email: string,
-    @Ctx() { em, redis }: Context
+    @Ctx() { redis }: Context
   ): Promise<Boolean> {
-    const user = await em.findOne(User, { email: email });
+    const user = await User.findOne({ where: { email: email } });
     if (!user) {
       // user with the given email is not found in the database
       // but for scurity reason we don't want to let the user know this
@@ -242,7 +234,7 @@ export class UserResolver {
   async changePassword(
     @Arg("token") token: string,
     @Arg("newPassword") newPassword: string,
-    @Ctx() { em, req, redis }: Context
+    @Ctx() { req, redis }: Context
   ): Promise<UserResponse> {
     // password shouldn't be empty
     if (newPassword.length <= 2) {
@@ -272,7 +264,8 @@ export class UserResolver {
     }
 
     // now the user is found, so change the password
-    const user = await em.findOne(User, { id: parseInt(userId) });
+    const userIdNum = parseInt(userId);
+    const user = await User.findOne({ where: { id: userIdNum } });
 
     // user associated with the token no longer exist somehow
     if (!user) {
@@ -287,8 +280,10 @@ export class UserResolver {
     }
 
     // encrypt the password
-    user.password = await argon2.hash(newPassword);
-    await em.persistAndFlush(user);
+    await User.update(
+      { id: userIdNum },
+      { password: await argon2.hash(newPassword) }
+    );
 
     // delete the token from the redis so that user can't reuse the link to change the password
     redis.del(key);
