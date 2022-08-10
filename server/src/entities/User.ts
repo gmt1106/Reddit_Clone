@@ -3,10 +3,12 @@ import {
   Column,
   CreateDateColumn,
   Entity,
+  OneToMany,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from "typeorm";
 import { Field, ObjectType } from "type-graphql";
+import { Post } from "./post";
 
 // add a decorator to make entity as a graphql type so we can pass to the resolver
 @ObjectType()
@@ -38,4 +40,7 @@ export class User extends BaseEntity {
   @Field()
   @Column({ unique: true })
   email!: string;
+
+  @OneToMany(() => Post, (post) => post.creator)
+  posts: Post[];
 }

@@ -1,9 +1,11 @@
 import { Box } from "@chakra-ui/react";
 import React from "react";
 
+export type WrapperVariant = "small" | "regular";
+
 interface WrapperProps {
   children: any;
-  variant?: "small" | "regualr";
+  variant?: WrapperVariant;
 }
 
 // Box element in chakra is like a <div> but you can style it
@@ -12,7 +14,7 @@ export const Wrapper: React.FC<WrapperProps> = ({ children, variant }) => {
     <Box
       mt={8}
       mx="auto"
-      maxW={variant === "regualr" ? "800px" : "400px"}
+      maxW={variant === "regular" ? "800px" : "400px"}
       w="100%"
     >
       {children}

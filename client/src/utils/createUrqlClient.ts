@@ -1,12 +1,29 @@
-import { dedupExchange, fetchExchange } from "urql";
-import { cacheExchange, Cache, QueryInput } from "@urql/exchange-graphcache";
+import { Cache, cacheExchange, QueryInput } from "@urql/exchange-graphcache";
+import Router from "next/router";
+import { dedupExchange, Exchange, fetchExchange } from "urql";
+import { pipe, tap } from "wonka";
 import {
-  MeDocument,
   LoginMutation,
-  RegisterMutation,
-  MeQuery,
   LogoutMutation,
+  MeDocument,
+  MeQuery,
+  RegisterMutation,
 } from "../generated/graphql";
+
+// This will allow us to catch all errors.
+// A way to deal with general error.
+export const errorExchange: Exchange =
+  ({ forward }) =>
+  (ops$) => {
+    return pipe(
+      forward(ops$),
+      tap(({ error }) => {
+        if (error?.message.includes("not authorized")) {
+          Router.replace("/login"); // outside of react so use global router // replce = replace the current route // push  = push on a new entry on the stack
+        }
+      })
+    );
+  };
 
 export const createUrqlClient = (ssrExchange: any) => ({
   // client is my graphQL server
@@ -80,6 +97,7 @@ export const createUrqlClient = (ssrExchange: any) => ({
         },
       },
     }),
+    errorExchange,
     ssrExchange,
     fetchExchange,
   ],
@@ -95,7 +113,3 @@ function typedUpdateQuery<Result, Query>(
 ) {
   return cache.updateQuery(qi, (data) => fn(result, data as any) as any);
 }
-
-let sum = (x: number, y: number) => {
-  return x + y;
-};

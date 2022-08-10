@@ -4,9 +4,11 @@ import {
   Column,
   CreateDateColumn,
   Entity,
+  ManyToOne,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from "typeorm";
+import { User } from "./User";
 
 // add a decorator to make entity as a graphql type so we can pass to the resolver
 @ObjectType()
@@ -29,4 +31,21 @@ export class Post extends BaseEntity {
   @Field()
   @Column()
   title!: string;
+
+  @Field()
+  @Column()
+  text!: string;
+
+  @Field()
+  @Column({ type: "int", default: 0 })
+  points!: number;
+
+  // set up a foreign key in the User table
+  @ManyToOne(() => User, (user) => user.posts)
+  creator: User;
+
+  // store the foregin key as creatorId
+  @Field()
+  @Column()
+  creatorId: number;
 }
