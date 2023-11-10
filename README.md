@@ -8,6 +8,8 @@ Using technology: React, Typescript, GraphQL, URQL/Apollo, Node.js, PostgreSQL, 
 
 ## How to run the project in local
 ### server
+- yarn install
+  
 - redis-server (start the redis server)
 - redis-cli shutdown (stop the redis server)
 
@@ -15,4 +17,6 @@ Using technology: React, Typescript, GraphQL, URQL/Apollo, Node.js, PostgreSQL, 
 - yarn dev (re-execute the updated javascript file)
 
 ### client
+- yarn install
+  
 - yarn dev
