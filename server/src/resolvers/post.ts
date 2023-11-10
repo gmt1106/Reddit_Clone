@@ -51,7 +51,7 @@ export class PostResolver {
   ): Promise<Post> {
     return Post.create({
       ...createPostInput,
-      creatorId: req.session.userId,
+      creatorId: req.session.userId, // we know who the user is so we pass it in as a creatorId to create a post. This is a common practice.
     }).save();
   }
 

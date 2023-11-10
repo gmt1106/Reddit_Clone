@@ -35,8 +35,10 @@ const ChangePassword: NextPage<{ token: string }> = ({ token }) => {
           if (response.data?.changePassword.errors) {
             const errorMap = toErrorMap(response.data.changePassword.errors);
             if ("token" in errorMap) {
+              // we pass the error message for the token
               setTokenError(errorMap.token);
             }
+            // we do set Error all the time because we might get token error and regular error at the same time
             setErrors(errorMap);
           } else if (response.data?.changePassword.user) {
             router.push("/");
@@ -85,11 +87,13 @@ const ChangePassword: NextPage<{ token: string }> = ({ token }) => {
 };
 
 // This is a special function from next.js
-// Allow us to get unique query parameters and pass it to the original function component (ChangePassword)
+// Allow us to get any query parameters and pass it to the original function component (ChangePassword)
 ChangePassword.getInitialProps = ({ query }) => {
   return {
     token: query.token as string,
   };
 };
+
+// next.js also has getServerProps() similar to getInitialProps() that runs in the server
 
 export default withUrqlClient(createUrqlClient)(ChangePassword);

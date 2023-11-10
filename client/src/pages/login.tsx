@@ -12,7 +12,8 @@ import NextLink from "next/link";
 
 const Login: React.FC<{}> = ({}) => {
   const router = useRouter();
-
+  // if you console log the router, you can see that query parameter is in "query" object with "next" key
+  // console.log(router);
   const [, login] = useLoginMutation();
   return (
     <Wrapper variant="small">
@@ -23,7 +24,14 @@ const Login: React.FC<{}> = ({}) => {
           if (response.data?.login.errors) {
             setErrors(toErrorMap(response.data.login.errors));
           } else if (response.data?.login.user) {
-            router.push("/");
+            // if this query parameter is defined, then that means there is a page to go back where user redirected from to log in page
+            if (typeof router.query.next === "string") {
+              // go back to the page
+              router.push(router.query.next);
+            } else {
+              // else just go to home page
+              router.push("/");
+            }
           }
         }}
       >

@@ -42,11 +42,16 @@ export default withUrqlClient(createUrqlClient, { ssr: true })(Index);
 // const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
 // 3. In the chrome browser, open inspect, go to Network and set Fast 3G
 //
-// When SSR is off, you see "loading..." on the screen and then after a while, posts are displayed
-// Javascript is evaluated and then fetch the posts data and change it to HTML
+// When SSR is off, you see "loading..." on the screen and then after a while, posts are displayed.
+// This is because the page source does not have the data, but it has <div> loading... </div>.
+// (You can check the page source by right click > View Page Source)
+// What happen is that Javascript is evaluated and then fetch the posts data and change it to HTML from the page source.
 // This is the worst for the Search Engine Optimization (SEO) which means won't appear in google search
-// When SSR is on, you see posts being displayed withouht "loading..." message
+// Because based on the page source contents Google decides which links to display for a search
+// When SSR is on, you see posts being displayed without "loading..." message in the page source
 //
+// If you want to, you can load all pages from server, but that is more load on server.
+// So the data I am using need to be found by Google, then use server side rendering.
 //
 // When should I use SSR?
 // If I am querying data (dynamic data) and if the content of the query needs to be found by google (= good SEO),

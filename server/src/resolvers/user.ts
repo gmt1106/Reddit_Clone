@@ -18,7 +18,8 @@ import { v4 as uuidv4 } from "uuid";
 
 // ObjectType is for a return value
 @ObjectType()
-// Field error is for when there is something wrong with a particular field ex)password, email
+// Field error is for when th ere is something wrong with a particular field ex)password, email
+// message is for to explain what is actaully wrong
 class FieldError {
   @Field()
   field: string;
@@ -29,8 +30,8 @@ class FieldError {
 
 @ObjectType()
 class UserResponse {
-  // want to return User if the resolver worked properly and return error if not
-  @Field(() => [FieldError], { nullable: true })
+  // want to return User if the resolver worked properly and return error if not. That is why they have question mark, so that undefined type is possible.
+  @Field(() => [FieldError], { nullable: true }) // explicit type is set to make it nullable.
   errors?: FieldError[];
 
   @Field(() => User, { nullable: true })
@@ -67,11 +68,11 @@ export class UserResolver {
     let user;
 
     try {
-      // this is the same as
       // User.create({
       // username: registerInput.username,
       // password: hashedPassword,
       // email: registerInput.email }).save()
+      // this is the same as the above line
       const result = await appDataSource
         .createQueryBuilder()
         .insert()
@@ -81,7 +82,7 @@ export class UserResolver {
           password: hashedPassword,
           email: registerInput.email,
         })
-        .returning("*")
+        .returning("*") // return us back the field
         .execute();
       user = result.raw[0];
     } catch (err) {
@@ -145,7 +146,7 @@ export class UserResolver {
     // store user id in the session (cookie)
     req.session.userId = user.id;
 
-    /* note on how cookies work 
+    /* note on how session works 
     1.  Stores the userId to the session.
         req.session.userId = user.id;
 
@@ -157,12 +158,12 @@ export class UserResolver {
         sess:qlaskjfalwejflw  ->  {userId: 1}
 
     4. express-session will set a cookie on my browser 
-        dkejalsfejf83js   This is the cookie. The cookie value is the encrypt version of redis key.
+        dkejalsfejf83js   This is the cookie. The cookie value is the encrypt version of the redis key.
 
     5. When a user makes a request, the cookie value is sent to the server
         dkejalsfejf83js is sent to the server 
 
-    6. On the server the cookie value is decrypt using the secret that we set when we made the session. 
+    6. On the server the cookie value is decrypt using the secret that we set when we made the session.  
         secret: "kadfljskdjfiwoenvskdnvkdsgjlei"
         dkejalsfejf83js  ->  sess:qlaskjfalwejflw
 
@@ -183,8 +184,9 @@ export class UserResolver {
     // destroy function removes the session from the redis
     // this function requires a callback function
     return new Promise((resolve, _reject) =>
+      // destroy function remove session from redis. It takes callback.
       req.session.destroy((err) => {
-        // clear cookie
+        // We also want to clear cookie, not just remove session from redis
         // still wants to clear the cookie even if destroying the session is failed
         res.clearCookie(COOKIE_NAME);
         if (err) {

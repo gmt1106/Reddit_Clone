@@ -1,4 +1,4 @@
-import "reflect-metadata";
+import "reflect-metadata"; // typeorm need this
 import { DataSource } from "typeorm";
 import { COOKIE_NAME, __prod__ } from "./constants";
 import express from "express";
@@ -80,14 +80,14 @@ const main = async () => {
       store: new RedisStore({ client: redis as any, disableTouch: true }),
       cookie: {
         maxAge: 1000 * 60 * 60 * 24 * 365 * 10, // 10 years
-        httpOnly: true, // from the javascript code in the frontend, can't access the cookie
-        // sameSite: "lax", // csrf
+        httpOnly: true, // from the javascript code in the frontend, can't access the cookie. This is good for security reason.
+        // sameSite: "lax", // protecting in csrf
         // secure: __prod__, // cookie only wors in https. Off when it is connect to local host
         // ********** this is a setting for the Apollo Studio to send cookies **********
         // sameSite: "none",
         // secure: true,
       },
-      saveUninitialized: false, // means it will create session by default even if you didn't store any data in it
+      saveUninitialized: false, // means when the value is set to true, it will create session by default even if you didn't store any data in it
       secret: "kadfljskdjfiwoenvskdnvkdsgjlei",
       resave: false,
     })

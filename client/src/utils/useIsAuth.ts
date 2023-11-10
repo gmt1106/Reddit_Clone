@@ -6,10 +6,18 @@ import { useMeQuery } from "../generated/graphql";
 export const useIsAuth = () => {
   const router = useRouter();
   const [{ data, fetching }] = useMeQuery();
-  // check if user is logged in and if not, then redirect to login page
+  // if you take a look at the router pathname or route field, we know where we are
+  // we can pass this as a parameter when we nevigate to the login page
+  // console.log(router);
+
+  // Check if user is logged in and if not, then redirect to login page
+  // Also consider fetching state
   useEffect(() => {
     if (!fetching && !data?.me) {
-      router.replace("/login");
+      // Pass the pathname that indicatin where we are as a parameter
+      // This was we can tell the login page where we should go next after login is done
+      // Exmaple: http://localhost:3000/login?next=/create-post
+      router.replace("/login?next=" + router.pathname);
     }
   }, [data, fetching, router]);
 };

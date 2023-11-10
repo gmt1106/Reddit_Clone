@@ -10,21 +10,28 @@ import {
   RegisterMutation,
 } from "../generated/graphql";
 
-// This will allow us to catch all errors.
-// A way to deal with general error.
+// Global Error Handling
+// This will allow us to catch all errors. A way to deal with general error.
 export const errorExchange: Exchange =
   ({ forward }) =>
   (ops$) => {
     return pipe(
       forward(ops$),
+      // every thime there is an error, it will come here
       tap(({ error }) => {
         if (error?.message.includes("not authorized")) {
-          Router.replace("/login"); // outside of react so use global router // replce = replace the current route // push  = push on a new entry on the stack
+          // outside of react so use global router instead of using hook.
+          // replce() = replace the current route. Used when you want to redirect.
+          // push() = push on a new entry on the stack.
+          Router.replace("/login");
         }
       })
     );
   };
 
+// https://formidable.com/open-source/urql/docs/advanced/server-side-rendering/#legacy-nextjs-pages
+// we can wrap components with this and this will optionally server side render pages
+// we get to choose which pages to be server side rendered
 export const createUrqlClient = (ssrExchange: any) => ({
   // client is my graphQL server
   url: "http://localhost:4000/graphql",
@@ -82,7 +89,8 @@ export const createUrqlClient = (ssrExchange: any) => ({
             );
           },
           logout: (logoutResult, _args, cache, _info) => {
-            // need to update me query to null
+            // We don't need to invalidate the user, because we are not deleting the user but just logging him out
+            // Therefore we want the me query to return null, so we should update me query to return null
             typedUpdateQuery<LogoutMutation, MeQuery>(
               cache,
               { query: MeDocument },
