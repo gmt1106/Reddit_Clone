@@ -1,3 +1,4 @@
+# UserResponse type name matches with the ObjectType class UserResponse in server/src/resolvers/user.ts
 fragment UserResponse on UserResponse {
   errors {
     ...Error

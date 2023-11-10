@@ -10,9 +10,10 @@ interface NavBarProps {}
 
 export const NavBar: React.FC<NavBarProps> = ({}) => {
   // Since index page do SSR, it will send request to get the currently logged in user (MeQuery) on the next.js server
-  // However, the next.js server does not have cookies, only graphql server have cookies,
-  // so the next.js server will just returns null even if the cookie is set
-  // To fix this issue, make it to skip to send a request for MeQuery to next.js server when I am in server
+  // However, the next.js server does not have cookies, only graphql server have cookies (and it is pointless to make next.js to work with cookie because it is not useful info for SEO),
+  // so the next.js server will just returns null even if the cookie is set.
+  // It is an uesless query to run on server.
+  // To fix this issue, make it to skip to send a request for MeQuery to next.js server when I am in server, and run it if I am in a browser.
   //
   // `isServer` tells me if I am in the server or in browser
   // `useEffect` is only executed in the browser (not is server) and is executed during hydration
@@ -20,7 +21,7 @@ export const NavBar: React.FC<NavBarProps> = ({}) => {
   const [isServer, setIsServer] = useState(true);
   useEffect(() => setIsServer(false), []);
   const [{ data, fetching }] = useMeQuery({
-    pause: isServer, // now when I am in server, data will be undefined instead of null
+    pause: isServer, // now when I am in server, data will be undefined instead of null, which mean it is not runing request anymore.
   });
 
   // Need to see if it is loading (fetching)
