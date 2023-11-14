@@ -16,6 +16,7 @@ exports.PostResolver = void 0;
 const post_1 = require("../entities/post");
 const type_graphql_1 = require("type-graphql");
 const isAuth_1 = require("../middleware/isAuth");
+const index_1 = require("../index");
 let createPostInput = class createPostInput {
 };
 __decorate([
@@ -30,8 +31,19 @@ createPostInput = __decorate([
     (0, type_graphql_1.InputType)()
 ], createPostInput);
 let PostResolver = class PostResolver {
-    async posts() {
-        return post_1.Post.find();
+    async posts(limit, cursor) {
+        const realLimit = Math.min(50, limit);
+        const queryBuilder = index_1.appDataSource
+            .getRepository(post_1.Post)
+            .createQueryBuilder("p")
+            .orderBy('"createdAt"', "DESC")
+            .take(realLimit);
+        if (cursor) {
+            queryBuilder.where('"createdAt" < :cursor', {
+                cursor: new Date(parseInt(cursor)),
+            });
+        }
+        return queryBuilder.getMany();
     }
     post(id) {
         return post_1.Post.findOne({ where: { id } });
@@ -57,8 +69,10 @@ let PostResolver = class PostResolver {
 };
 __decorate([
     (0, type_graphql_1.Query)(() => [post_1.Post]),
+    __param(0, (0, type_graphql_1.Arg)("limit", () => type_graphql_1.Int)),
+    __param(1, (0, type_graphql_1.Arg)("cursor", () => String, { nullable: true })),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", []),
+    __metadata("design:paramtypes", [Number, Object]),
     __metadata("design:returntype", Promise)
 ], PostResolver.prototype, "posts", null);
 __decorate([

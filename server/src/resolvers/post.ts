@@ -8,9 +8,11 @@ import {
   Field,
   Ctx,
   UseMiddleware,
+  Int,
 } from "type-graphql";
 import { Context } from "src/types";
 import { isAuth } from "../middleware/isAuth";
+import { appDataSource } from "../index";
 
 @InputType()
 class createPostInput {
@@ -26,11 +28,37 @@ class createPostInput {
 export class PostResolver {
   // get the list of all posts
   @Query(() => [Post]) // setting graphql return type with [Post]
-  async posts(): Promise<Post[]> {
+  async posts(
+    // Arguments for pagination
+    @Arg("limit", () => Int) limit: number,
+    // Note that very first time we fetch posts, we are not going to have cursor so must be nullable
+    @Arg("cursor", () => String, { nullable: true }) cursor: string | null // This is string type but the value will be the Date the post is created in milisecond
+  ): Promise<Post[]> {
     // setting typescript return type with of post in promise
     // want to query everything from the database and return
     // find will return a promise of posts
-    return Post.find();
+    // return Post.find();
+    // Update Post.find() to support pagination
+    // source: https://typeorm.io/select-query-builder#what-is-querybuilder
+
+    // Cap the limit to 50
+    const realLimit = Math.min(50, limit);
+    // we can look at the sql that is generated and if we don't like it we can write sql by ourselves
+    const queryBuilder = appDataSource
+      .getRepository(Post)
+      .createQueryBuilder("p")
+      .orderBy('"createdAt"', "DESC")
+      .take(realLimit);
+
+    // if cursor exists
+    if (cursor) {
+      queryBuilder.where('"createdAt" < :cursor', {
+        // need the format milisecond into Date form
+        cursor: new Date(parseInt(cursor)),
+      });
+    }
+    // getMany(); is the function that actaully executes the sql
+    return queryBuilder.getMany();
   }
 
   // get a single post by id

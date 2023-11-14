@@ -25,18 +25,18 @@ declare module "express-session" {
   }
 }
 
-const main = async () => {
-  // connect to the database
-  const appDataSource = new DataSource({
-    type: "postgres",
-    username: "redditclone",
-    password: "redditclone1106",
-    database: "redditclone",
-    entities: [Post, User],
-    synchronize: true, // TypeORM will create table automatically, don't have to run migratioin
-    logging: true,
-  });
+// TypeORM's DataSource holds the database connection settings and establishes initial database connection
+export const appDataSource = new DataSource({
+  type: "postgres",
+  username: "redditclone",
+  password: "redditclone1106",
+  database: "redditclone",
+  entities: [Post, User],
+  synchronize: true, // TypeORM will create table automatically, don't have to run migratioin
+  logging: true,
+});
 
+const main = async () => {
   // to initialize initial connection with the database, register all entities
   // and "synchronize" database schema, call "initialize()" method of a newly created database
   // once in your application bootstrap
@@ -44,8 +44,11 @@ const main = async () => {
     .initialize()
     .then(() => {
       // here you can start to work with your database
+      console.log("Data Source has been initialized!");
     })
-    .catch((error) => console.log(error));
+    .catch((error) =>
+      console.log("Error during Data Source initialization", error)
+    );
 
   // express build rest api
   const app = express();

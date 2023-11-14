@@ -13,9 +13,11 @@ import { useRouter } from "next/router";
 import NextLink from "next/link";
 
 // The parameter token is defined below with ChangePassword.getInitialProps = () => {}
-const ChangePassword: NextPage<{ token: string }> = ({ token }) => {
+const ChangePassword: NextPage<{ token: string }> = () => {
   const [, changePassword] = useChangePasswordMutation();
   const [tokenError, setTokenError] = useState("");
+
+  // Actaully the router is saving the query parameter
   const router = useRouter();
   return (
     <Wrapper variant="small">
@@ -30,7 +32,9 @@ const ChangePassword: NextPage<{ token: string }> = ({ token }) => {
           }
           const response = await changePassword({
             newPassword: values.newPassword,
-            token: token,
+            // the empty token will throw back an error
+            token:
+              typeof router.query.token === "string" ? router.query.token : "",
           });
           if (response.data?.changePassword.errors) {
             const errorMap = toErrorMap(response.data.changePassword.errors);
@@ -88,11 +92,14 @@ const ChangePassword: NextPage<{ token: string }> = ({ token }) => {
 
 // This is a special function from next.js
 // Allow us to get any query parameters and pass it to the original function component (ChangePassword)
-ChangePassword.getInitialProps = ({ query }) => {
-  return {
-    token: query.token as string,
-  };
-};
+// Actaully the router is saving the query parameter, so we don't need this anymore
+// If you page does not use getInitialProps then Next.js will make the page static and optimize it
+// So it is better to remove it if we don't need this
+// ChangePassword.getInitialProps = ({ query }) => {
+//   return {
+//     token: query.token as string,
+//   };
+// };
 
 // next.js also has getServerProps() similar to getInitialProps() that runs in the server
 

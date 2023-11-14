@@ -3,6 +3,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.appDataSource = void 0;
 require("reflect-metadata");
 const typeorm_1 = require("typeorm");
 const constants_1 = require("./constants");
@@ -18,21 +19,22 @@ const connect_redis_1 = __importDefault(require("connect-redis"));
 const cors_1 = __importDefault(require("cors"));
 const post_2 = require("./entities/post");
 const User_1 = require("./entities/User");
+exports.appDataSource = new typeorm_1.DataSource({
+    type: "postgres",
+    username: "redditclone",
+    password: "redditclone1106",
+    database: "redditclone",
+    entities: [post_2.Post, User_1.User],
+    synchronize: true,
+    logging: true,
+});
 const main = async () => {
-    const appDataSource = new typeorm_1.DataSource({
-        type: "postgres",
-        username: "redditclone",
-        password: "redditclone1106",
-        database: "redditclone",
-        entities: [post_2.Post, User_1.User],
-        synchronize: true,
-        logging: true,
-    });
-    appDataSource
+    exports.appDataSource
         .initialize()
         .then(() => {
+        console.log("Data Source has been initialized!");
     })
-        .catch((error) => console.log(error));
+        .catch((error) => console.log("Error during Data Source initialization", error));
     const app = (0, express_1.default)();
     const RedisStore = (0, connect_redis_1.default)(express_session_1.default);
     const redis = new ioredis_1.default();
@@ -57,7 +59,7 @@ const main = async () => {
             resolvers: [hello_1.HelloResolver, post_1.PostResolver, user_1.UserResolver],
             validate: false,
         }),
-        context: ({ req, res }) => ({ appDataSource, req, res, redis }),
+        context: ({ req, res }) => ({ appDataSource: exports.appDataSource, req, res, redis }),
     });
     await apolloServer.start();
     apolloServer.applyMiddleware({
