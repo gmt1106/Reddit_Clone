@@ -19,6 +19,7 @@ const connect_redis_1 = __importDefault(require("connect-redis"));
 const cors_1 = __importDefault(require("cors"));
 const post_2 = require("./entities/post");
 const User_1 = require("./entities/User");
+const path_1 = __importDefault(require("path"));
 exports.appDataSource = new typeorm_1.DataSource({
     type: "postgres",
     username: "redditclone",
@@ -27,12 +28,14 @@ exports.appDataSource = new typeorm_1.DataSource({
     entities: [post_2.Post, User_1.User],
     synchronize: true,
     logging: true,
+    migrations: [path_1.default.join(__dirname, "./migrations/*")],
 });
 const main = async () => {
     exports.appDataSource
         .initialize()
         .then(() => {
         console.log("Data Source has been initialized!");
+        exports.appDataSource.runMigrations();
     })
         .catch((error) => console.log("Error during Data Source initialization", error));
     const app = (0, express_1.default)();

@@ -17,6 +17,7 @@ import { Context } from "./types";
 import cors from "cors";
 import { Post } from "./entities/post";
 import { User } from "./entities/User";
+import path from "path";
 
 // things you want to store in session
 declare module "express-session" {
@@ -34,6 +35,7 @@ export const appDataSource = new DataSource({
   entities: [Post, User],
   synchronize: true, // TypeORM will create table automatically, don't have to run migratioin
   logging: true,
+  migrations: [path.join(__dirname, "./migrations/*")],
 });
 
 const main = async () => {
@@ -45,6 +47,8 @@ const main = async () => {
     .then(() => {
       // here you can start to work with your database
       console.log("Data Source has been initialized!");
+      // run migration
+      // appDataSource.runMigrations();
     })
     .catch((error) =>
       console.log("Error during Data Source initialization", error)
