@@ -9,6 +9,8 @@ import {
   Ctx,
   UseMiddleware,
   Int,
+  FieldResolver,
+  Root,
 } from "type-graphql";
 import { Context } from "src/types";
 import { isAuth } from "../middleware/isAuth";
@@ -24,8 +26,15 @@ class createPostInput {
 }
 
 // Add functions that are mutation or query
-@Resolver()
+@Resolver(Post) // state what we are resloving, Post
 export class PostResolver {
+  // This is not a field that is in DB. We are going to just create and send to the client
+  // Not sending the whole text body of each post but sending snippet of it.
+  @FieldResolver(() => String)
+  textSnippet(@Root() root: Post) {
+    return root.text.slice(0, 50);
+  }
+
   // get the list of all posts
   @Query(() => [Post]) // setting graphql return type with [Post]
   async posts(

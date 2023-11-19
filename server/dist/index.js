@@ -35,7 +35,6 @@ const main = async () => {
         .initialize()
         .then(() => {
         console.log("Data Source has been initialized!");
-        exports.appDataSource.runMigrations();
     })
         .catch((error) => console.log("Error during Data Source initialization", error));
     const app = (0, express_1.default)();
