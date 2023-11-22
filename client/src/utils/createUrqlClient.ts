@@ -1,6 +1,16 @@
-import { Cache, cacheExchange, QueryInput } from "@urql/exchange-graphcache";
+import {
+  Cache,
+  cacheExchange,
+  QueryInput,
+  Resolver,
+} from "@urql/exchange-graphcache";
 import Router from "next/router";
-import { dedupExchange, Exchange, fetchExchange } from "urql";
+import {
+  dedupExchange,
+  Exchange,
+  fetchExchange,
+  stringifyVariables,
+} from "urql";
 import { pipe, tap } from "wonka";
 import {
   LoginMutation,
@@ -29,6 +39,138 @@ export const errorExchange: Exchange =
     );
   };
 
+// Urql has simplePagination() and relayPagination() which will handle the underlying detail
+// The problem is simplePagination only works with offset and limit but we are using cursor and limit
+// So we will alter the simplePagination code from Urql
+export const cursorPagination = (): Resolver<any, any, any> => {
+  // This is the shape of the client side resolver
+  // (_parent, fieldArgs, cache, info) => {}
+  return (_parent, fieldArgs, cache, info) => {
+    const { parentKey: entityKey, fieldName } = info;
+
+    // console.log(entityKey, fieldName);
+    // Query posts
+
+    // this cache.inspectFields() will get all the field in the cache under this entityKey which has value of Query
+    const allFields = cache.inspectFields(entityKey);
+
+    // console.log(allFields);
+    // [
+    //   {
+    //     fieldKey: 'posts({"limit":10})',
+    //     fieldName: "posts",
+    //     arguments: { limit: 10 },
+    //   },
+    // ];
+
+    // With value from cache, what can do is we can filter the one that we don't want
+    // This line is filtering out only posts value from cache
+    const fieldInfos = allFields.filter((info) => info.fieldName === fieldName);
+
+    // We will return undefined if there is no data. First one won't have data and that is called cache miss.
+    const size = fieldInfos.length;
+    if (size === 0) {
+      return undefined;
+    }
+
+    // fieldArgs is the variables that we passed from the index.tsx.
+    // console.log("fieldArgs", fieldArgs);
+    // {limit: 10}
+    // {limit: 10, cursor: '1700116070550'}
+
+    // If we pass this,
+    // info.partial = true;
+    // urql will know that we didn't get all data and will fetch more data from server
+    // we set this to true if the next page is not in the cache
+
+    // we need to create the fieldKey manually
+    const fieldKey = `${fieldName}(${stringifyVariables(fieldArgs)})`;
+    // console.log("fieldKey by me ", fieldKey);
+    // posts({"cursor":"1700116070550","limit":10})
+
+    // using this line check if the next page is in the cache. If not fetch the next page from the server.
+    const isInTheCache = cache.resolve(entityKey, fieldKey);
+    info.partial = !isInTheCache;
+
+    // Check if posts in the cache and return that from the cache
+    // As there will be more query executed, more posts will be there, and we will add them all to results and return to user.
+    // We are gathering 1st page, 2nd page, 3rd page all together to a long list
+    const results: string[] = [];
+    fieldInfos.forEach((fieldInfo) => {
+      const data = cache.resolve(entityKey, fieldInfo.fieldKey) as string[];
+      // console.log(data);
+      // [
+      //   "Post:13",
+      //   "Post:14",
+      //   "Post:6",
+      //   "Post:7",
+      //   "Post:8",
+      //   "Post:9",
+      //   "Post:10",
+      //   "Post:11",
+      //   "Post:12",
+      //   "Post:15",
+      // ];
+      //
+      results.push(...data);
+    });
+
+    return results;
+
+    // const visited = new Set();
+    // let result: NullArray<string> = [];
+    // let prevOffset: number | null = null;
+
+    // for (let i = 0; i < size; i++) {
+    //   const { fieldKey, arguments: args } = fieldInfos[i];
+    //   if (args === null || !compareArgs(fieldArgs, args)) {
+    //     continue;
+    //   }
+
+    //   const links = cache.resolve(entityKey, fieldKey) as string[];
+    //   const currentOffset = args[cursorArgument];
+
+    //   if (
+    //     links === null ||
+    //     links.length === 0 ||
+    //     typeof currentOffset !== "number"
+    //   ) {
+    //     continue;
+    //   }
+
+    //   const tempResult: NullArray<string> = [];
+
+    //   for (let j = 0; j < links.length; j++) {
+    //     const link = links[j];
+    //     if (visited.has(link)) continue;
+    //     tempResult.push(link);
+    //     visited.add(link);
+    //   }
+
+    //   if (
+    //     (!prevOffset || currentOffset > prevOffset) ===
+    //     (mergeMode === "after")
+    //   ) {
+    //     result = [...result, ...tempResult];
+    //   } else {
+    //     result = [...tempResult, ...result];
+    //   }
+
+    //   prevOffset = currentOffset;
+    // }
+
+    // const hasCurrentPage = cache.resolve(entityKey, fieldName, fieldArgs);
+    // if (hasCurrentPage) {
+    //   return result;
+    // } else if (!(info as any).store.schema) {
+    //   return undefined;
+    // } else {
+    //   info.partial = true;
+    //   return result;
+    // }
+  };
+};
+
 // https://formidable.com/open-source/urql/docs/advanced/server-side-rendering/#legacy-nextjs-pages
 // we can wrap components with this and this will optionally server side render pages
 // we get to choose which pages to be server side rendered
@@ -43,6 +185,12 @@ export const createUrqlClient = (ssrExchange: any) => ({
   exchanges: [
     dedupExchange,
     cacheExchange({
+      // This is a client side resolver that will run every time the query runs and it will alter how query result looks
+      resolvers: {
+        Query: {
+          posts: cursorPagination(),
+        },
+      },
       updates: {
         Mutation: {
           // this is the function that we can do update cache

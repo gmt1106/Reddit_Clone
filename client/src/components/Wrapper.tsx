@@ -9,7 +9,10 @@ interface WrapperProps {
 }
 
 // Box element in chakra is like a <div> but you can style it
-export const Wrapper: React.FC<WrapperProps> = ({ children, variant }) => {
+export const Wrapper: React.FC<WrapperProps> = ({
+  children,
+  variant = "regular",
+}) => {
   return (
     <Box
       mt={8}

@@ -3,24 +3,48 @@ import { createUrqlClient } from "../utils/createUrqlClient";
 import { usePostsQuery } from "../generated/graphql";
 import { Layout } from "../components/Layout";
 import NextLink from "next/link";
-import { Box, Heading, Link, Stack, Text } from "@chakra-ui/react";
+import {
+  Box,
+  Button,
+  Flex,
+  Heading,
+  Link,
+  Stack,
+  Text,
+} from "@chakra-ui/react";
+import { useState } from "react";
 
 const Index = () => {
-  const [{ data }] = usePostsQuery({
-    variables: {
-      limit: 10,
-    },
+  // This is to support pagination. Using setVariables() get the next page.
+  const [variables, setVariables] = useState({
+    limit: 10,
+    cursor: null as null | string,
   });
+
+  console.log(variables);
+
+  // Data will be null by default and fetching will be true. Then we will show loading...
+  // We want load more button only when we have data.
+  const [{ data, fetching }] = usePostsQuery({
+    variables,
+  });
+
+  if (!fetching && !data) {
+    return <div> you got query failed for some reason</div>;
+  }
   return (
     <Layout>
-      <NextLink href="/create-post">
-        <Link>create post</Link>
-      </NextLink>
-      {!data ? (
+      <Flex align="center">
+        <Heading>Reddit Clone</Heading>
+        <NextLink href="/create-post">
+          <Link ml="auto">create post</Link>
+        </NextLink>
+      </Flex>
+      {fetching && !data ? (
         <div>loading...</div>
       ) : (
         <Stack>
-          {data.posts.map((post) => (
+          {data!.posts.map((post) => (
             <Box key={post.id} p={5} shadow="md" borderWidth="1px">
               <Heading fontSize="xl">{post.title}</Heading>
               <Text mt={4}>{post.textSnippet + "..."}</Text>
@@ -28,6 +52,23 @@ const Index = () => {
           ))}
         </Stack>
       )}
+      {data ? (
+        <Flex>
+          <Button
+            onClick={() => {
+              setVariables({
+                limit: variables.limit, // keep the same limit
+                cursor: data.posts[data.posts.length - 1].createdAt, // the createdAt field of the last element in the posts
+              });
+            }}
+            isLoading={fetching}
+            m="auto"
+            my={8}
+          >
+            Load more
+          </Button>
+        </Flex>
+      ) : null}
     </Layout>
   );
 };
