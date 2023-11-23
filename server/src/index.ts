@@ -47,8 +47,12 @@ const main = async () => {
     .then(() => {
       // here you can start to work with your database
       console.log("Data Source has been initialized!");
+
       // run migration
-      // appDataSource.runMigrations();
+      appDataSource.runMigrations();
+
+      // clear Post table
+      // await Post.delete({});
     })
     .catch((error) =>
       console.log("Error during Data Source initialization", error)
