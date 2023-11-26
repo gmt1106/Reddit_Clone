@@ -44,7 +44,7 @@ export const errorExchange: Exchange =
 // So we will alter the simplePagination code from Urql
 export const cursorPagination = (): Resolver<any, any, any> => {
   // This is the shape of the client side resolver
-  // (_parent, fieldArgs, cache, info) => {}
+  // (parent, fieldArgs, cache, info) => {}
   return (_parent, fieldArgs, cache, info) => {
     const { parentKey: entityKey, fieldName } = info;
 
@@ -54,7 +54,7 @@ export const cursorPagination = (): Resolver<any, any, any> => {
     // this cache.inspectFields() will get all the field in the cache under this entityKey which has value of Query
     const allFields = cache.inspectFields(entityKey);
 
-    // console.log(allFields);
+    // console.log("allFields:", allFields);
     // [
     //   {
     //     fieldKey: 'posts({"limit":10})',
@@ -66,6 +66,7 @@ export const cursorPagination = (): Resolver<any, any, any> => {
     // With value from cache, what can do is we can filter the one that we don't want
     // This line is filtering out only posts value from cache
     const fieldInfos = allFields.filter((info) => info.fieldName === fieldName);
+    // console.log("FieldInfos:", fieldInfos);
 
     // We will return undefined if there is no data. First one won't have data and that is called cache miss.
     const size = fieldInfos.length;
@@ -83,22 +84,31 @@ export const cursorPagination = (): Resolver<any, any, any> => {
     // urql will know that we didn't get all data and will fetch more data from server
     // we set this to true if the next page is not in the cache
 
-    // we need to create the fieldKey manually
-    const fieldKey = `${fieldName}(${stringifyVariables(fieldArgs)})`;
-    // console.log("fieldKey by me ", fieldKey);
-    // posts({"cursor":"1700116070550","limit":10})
-
     // using this line check if the next page is in the cache. If not fetch the next page from the server.
-    const isInTheCache = cache.resolve(entityKey, fieldKey);
+    const isInTheCache = cache.resolve(
+      cache.resolve({ __typename: "Query" }, "posts", fieldArgs) as string,
+      "posts"
+    );
     info.partial = !isInTheCache;
 
     // Check if posts in the cache and return that from the cache
     // As there will be more query executed, more posts will be there, and we will add them all to results and return to user.
     // We are gathering 1st page, 2nd page, 3rd page all together to a long list
     const results: string[] = [];
+    let hasMore = true;
     fieldInfos.forEach((fieldInfo) => {
-      const data = cache.resolve(entityKey, fieldInfo.fieldKey) as string[];
-      // console.log(data);
+      const key = cache.resolve(
+        { __typename: "Query" },
+        "posts",
+        fieldInfo.arguments
+      ) as string;
+      const data = cache.resolve(key, "posts") as string[];
+      const _hasMore = cache.resolve(key, "hasMore") as boolean;
+      // we look for all the paginatedPosts that we fetched in cache and if one of them has hasMore = false, then that means no more posts to fetch in DB
+      if (!_hasMore) {
+        hasMore = _hasMore;
+      }
+      // console.log("data and hasMore: ", data, hasMore);
       // [
       //   "Post:13",
       //   "Post:14",
@@ -111,11 +121,15 @@ export const cursorPagination = (): Resolver<any, any, any> => {
       //   "Post:12",
       //   "Post:15",
       // ];
-      //
+      // true
       results.push(...data);
     });
 
-    return results;
+    return {
+      __typename: "PaginatedPosts",
+      hasMore,
+      posts: results,
+    };
   };
 };
 
@@ -133,7 +147,11 @@ export const createUrqlClient = (ssrExchange: any) => ({
   exchanges: [
     dedupExchange,
     cacheExchange({
-      // This is a client side resolver that will run every time the query runs and it will alter how query result looks
+      // PaginationPosts is the type we created but it does not have id field, so we need to say that it doesn't have id
+      keys: {
+        PaginatedPosts: () => null,
+      },
+      // This is a client side resolver that will run every time the query for posts runs and it will alter how query result looks
       resolvers: {
         Query: {
           posts: cursorPagination(),

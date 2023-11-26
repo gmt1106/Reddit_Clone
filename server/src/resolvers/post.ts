@@ -11,6 +11,7 @@ import {
   Int,
   FieldResolver,
   Root,
+  ObjectType,
 } from "type-graphql";
 import { Context } from "src/types";
 import { isAuth } from "../middleware/isAuth";
@@ -25,6 +26,15 @@ class createPostInput {
   text: string;
 }
 
+@ObjectType()
+class PaginatedPosts {
+  @Field(() => [Post])
+  posts: Post[];
+
+  @Field()
+  hasMore: boolean;
+}
+
 // Add functions that are mutation or query
 @Resolver(Post) // state what we are resloving, Post
 export class PostResolver {
@@ -36,13 +46,13 @@ export class PostResolver {
   }
 
   // get the list of all posts
-  @Query(() => [Post]) // setting graphql return type with [Post]
+  @Query(() => PaginatedPosts) // setting graphql return type with [Post]
   async posts(
     // Arguments for pagination
     @Arg("limit", () => Int) limit: number,
     // Note that very first time we fetch posts, we are not going to have cursor so must be nullable
     @Arg("cursor", () => String, { nullable: true }) cursor: string | null // This is string type but the value will be the Date the post is created in milisecond
-  ): Promise<Post[]> {
+  ): Promise<PaginatedPosts> {
     // setting typescript return type with of post in promise
     // want to query everything from the database and return
     // find will return a promise of posts
@@ -50,14 +60,16 @@ export class PostResolver {
     // Update Post.find() to support pagination
     // source: https://typeorm.io/select-query-builder#what-is-querybuilder
 
-    // Cap the limit to 50
-    const realLimit = Math.min(50, limit);
+    // Cap the limit to 50.
+    const realLimit = Math.min(50, limit) + 1;
+    // If the realLimit is 20 then fetch 21 posts. By this was we can tell if next page to fetch is there or not.
+    const realLimitPlusOne = realLimit + 1;
     // we can look at the sql that is generated and if we don't like it we can write sql by ourselves
     const queryBuilder = appDataSource
       .getRepository(Post)
       .createQueryBuilder("p")
       .orderBy('"createdAt"', "DESC")
-      .take(realLimit);
+      .take(realLimitPlusOne);
 
     // if cursor exists
     if (cursor) {
@@ -66,8 +78,14 @@ export class PostResolver {
         cursor: new Date(parseInt(cursor)),
       });
     }
+
+    // Fetch 21 posts according to the realLimitPlusOne value and slice last one when we return to the client.
+    const posts = await queryBuilder.getMany();
     // getMany(); is the function that actaully executes the sql
-    return queryBuilder.getMany();
+    return {
+      posts: posts.slice(0, realLimit), // sclie to only 20 posts
+      hasMore: posts.length === realLimitPlusOne, // find out if there is next page or not
+    };
   }
 
   // get a single post by id
