@@ -64,24 +64,57 @@ export class PostResolver {
     const realLimit = Math.min(50, limit) + 1;
     // If the realLimit is 20 then fetch 21 posts. By this was we can tell if next page to fetch is there or not.
     const realLimitPlusOne = realLimit + 1;
-    // we can look at the sql that is generated and if we don't like it we can write sql by ourselves
-    const queryBuilder = appDataSource
-      .getRepository(Post)
-      .createQueryBuilder("p")
-      .orderBy('"createdAt"', "DESC")
-      .take(realLimitPlusOne);
 
-    // if cursor exists
+    // Write raw sql when query builder is not working
+    const replacements: any[] = [realLimitPlusOne];
     if (cursor) {
-      queryBuilder.where('"createdAt" < :cursor', {
-        // need the format milisecond into Date form
-        cursor: new Date(parseInt(cursor)),
-      });
+      // need the format milisecond into Date form
+      replacements.push(new Date(parseInt(cursor)));
     }
+    // In postgresql, there are multiple schemas that can be inside of your database, so you need to specify that you want the public schema for user table => public.user
+    // graphql wants creator objact instead of just username column value from user table. In the postgresql, there is a handy feature that we can tell we want json object back instead of just a column value.
+    // => json_build_object('username', u.username) creator      this means create an object called "creator" which has a field named "username" with value u.username. creator name is from grapql defintion in Post.ts.
+    // This is good way to fetch your data in graphql when you have relationships. Write a join and have a big query and that will grab all of your data. Then you don't have to worry about caching and data loader.
+    // The down side of this method is that you get creator object even if you didn't specify that you want to fetch that in the client side.
+    const posts = await appDataSource.query(
+      `
+    select p.*, 
+    json_build_object(
+      'id', u.id,
+      'username', u.username,
+      'email', u.email,
+      'createdAt', u."createdAt",
+      'updatedAt', u."updatedAt"
+      ) creator
+    from post p
+    inner join public.user u on u.id = p."creatorId"
+    ${cursor ? `where p."createdAt" < $2` : ""}
+    order by p."createdAt" DESC
+    limit $1
+    `,
+      replacements
+    );
 
-    // Fetch 21 posts according to the realLimitPlusOne value and slice last one when we return to the client.
-    const posts = await queryBuilder.getMany();
-    // getMany(); is the function that actaully executes the sql
+    // // Using query builder to create sql query
+    // const queryBuilder = appDataSource
+    //   .getRepository(Post)
+    //   .createQueryBuilder("p")
+    //   // Inner and left joins https://typeorm.io/select-query-builder#inner-and-left-joins
+    //   .innerJoinAndSelect("p.creator", "u", 'u.id = p."creatorId"')
+    //   .orderBy('p."createdAt"', "DESC")
+    //   .take(realLimitPlusOne);
+    // // if cursor exists
+    // if (cursor) {
+    //   queryBuilder.where('p."createdAt" < :cursor', {
+    //     // need the format milisecond into Date form
+    //     cursor: new Date(parseInt(cursor)),
+    //   });
+    // }
+    // // Fetch 21 posts according to the realLimitPlusOne value and slice last one when we return to the client.
+    // // getMany(); is the function that actaully executes the sql
+    // const posts = await queryBuilder.getMany();
+
+    console.log(posts);
     return {
       posts: posts.slice(0, realLimit), // sclie to only 20 posts
       hasMore: posts.length === realLimitPlusOne, // find out if there is next page or not

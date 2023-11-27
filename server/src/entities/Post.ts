@@ -32,6 +32,7 @@ export class Post extends BaseEntity {
   @Column({ type: "int", default: 0 })
   points!: number;
 
+  @Field()
   // set up a foreign key in the User table
   @ManyToOne(() => User, (user) => user.posts)
   creator: User;
