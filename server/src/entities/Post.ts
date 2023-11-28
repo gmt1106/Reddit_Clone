@@ -5,9 +5,11 @@ import {
   CreateDateColumn,
   Entity,
   ManyToOne,
+  OneToMany,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from "typeorm";
+import { UpVote } from "./UpVote";
 import { User } from "./User";
 
 // add a decorator to make entity as a graphql type so we can pass to the resolver
@@ -28,14 +30,18 @@ export class Post extends BaseEntity {
   @Column()
   text!: string;
 
+  // this is the addition of all up votes and down votes for this posts (addition of all entries for this post in UpVote join table)
   @Field()
   @Column({ type: "int", default: 0 })
   points!: number;
 
-  @Field()
+  @Field(() => User)
   // set up a foreign key in the User table
   @ManyToOne(() => User, (user) => user.posts)
   creator: User;
+
+  @OneToMany(() => UpVote, (upVote) => upVote.post)
+  upVotes: UpVote[];
 
   // store the foregin key as creatorId
   @Field()

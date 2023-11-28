@@ -1,4 +1,4 @@
-import { Post } from "../entities/post";
+import { Post } from "../entities/Post";
 import {
   Resolver,
   Query,
@@ -16,6 +16,7 @@ import {
 import { Context } from "src/types";
 import { isAuth } from "../middleware/isAuth";
 import { appDataSource } from "../index";
+import { UpVote } from "../entities/UpVote";
 
 @InputType()
 class createPostInput {
@@ -164,6 +165,36 @@ export class PostResolver {
   @Mutation(() => Boolean)
   async deletePost(@Arg("id") id: number): Promise<boolean> {
     await Post.delete(id);
+    return true;
+  }
+
+  @Mutation(() => Boolean)
+  @UseMiddleware(isAuth) // only able to vote when you are logged in
+  async vote(
+    @Arg("postId", () => Int) postId: number,
+    @Arg("value", () => Int) value: number,
+    @Ctx() { req }: Context
+  ) {
+    const isUpVote = value > 0;
+    const realValue = isUpVote ? 1 : -1; // even if they up vote to 30, it will only increase by one
+    const { userId } = req.session;
+
+    // add a new entry in UpVote table
+    await UpVote.insert({
+      userId,
+      postId,
+      value: realValue,
+    });
+
+    // update post's point column
+    appDataSource.query(
+      `
+    update post
+    set points = points + ${realValue}
+    where id = ${postId};
+    `
+    );
+
     return true;
   }
 }

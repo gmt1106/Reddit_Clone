@@ -15,9 +15,10 @@ import connectRedis from "connect-redis";
 import { Context } from "./types";
 // to set cors globally in express middleware not in apollo server middleware
 import cors from "cors";
-import { Post } from "./entities/post";
+import { Post } from "./entities/Post";
 import { User } from "./entities/User";
 import path from "path";
+import { UpVote } from "./entities/UpVote";
 
 // things you want to store in session
 declare module "express-session" {
@@ -32,7 +33,7 @@ export const appDataSource = new DataSource({
   username: "redditclone",
   password: "redditclone1106",
   database: "redditclone",
-  entities: [Post, User],
+  entities: [Post, User, UpVote],
   synchronize: true, // TypeORM will create table automatically, don't have to run migratioin
   logging: true,
   migrations: [path.join(__dirname, "./migrations/*")],

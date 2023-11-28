@@ -8,7 +8,8 @@ import {
   UpdateDateColumn,
 } from "typeorm";
 import { Field, ObjectType } from "type-graphql";
-import { Post } from "./post";
+import { Post } from "./Post";
+import { UpVote } from "./UpVote";
 
 // add a decorator to make entity as a graphql type so we can pass to the resolver
 @ObjectType()
@@ -35,6 +36,9 @@ export class User extends BaseEntity {
 
   @OneToMany(() => Post, (post) => post.creator)
   posts: Post[];
+
+  @OneToMany(() => UpVote, (upVote) => upVote.user)
+  upVotes: UpVote[];
 
   @Field(() => String)
   @CreateDateColumn()
