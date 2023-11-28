@@ -7,6 +7,8 @@ import {
   Ctx,
   ObjectType,
   Query,
+  FieldResolver,
+  Root,
 } from "type-graphql";
 import { User } from "../entities/User";
 import argon2 from "argon2";
@@ -39,8 +41,19 @@ class UserResponse {
 }
 
 // Add functions that are mutation or query
-@Resolver()
+@Resolver(User)
 export class UserResolver {
+  // This FieldResolver is to set the field permissions, deciding to whom we will going to show the field
+  @FieldResolver(() => String)
+  email(@Root() user: User, @Ctx() { req }: Context) {
+    // This is the current user and its oky to show them their own email
+    if (req.session.userId === user.id) {
+      return user.email;
+    }
+    // Current user wants to see someone else's email
+    return "";
+  }
+
   // Return current loged in user. If no one is logged in, return null.
   @Query(() => User, { nullable: true })
   me(@Ctx() { req }: Context) {
