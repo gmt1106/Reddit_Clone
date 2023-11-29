@@ -65,4 +65,4 @@ Post = __decorate([
     (0, typeorm_1.Entity)()
 ], Post);
 exports.Post = Post;
-//# sourceMappingURL=post.js.map
+//# sourceMappingURL=Post.js.map
