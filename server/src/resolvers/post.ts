@@ -43,7 +43,10 @@ export class PostResolver {
   // Not sending the whole text body of each post but sending snippet of it.
   @FieldResolver(() => String)
   textSnippet(@Root() root: Post) {
-    return root.text.slice(0, 50);
+    if (root.text.length > 50) {
+      return root.text.slice(0, 50) + "...";
+    }
+    return root.text;
   }
 
   // get the list of all posts

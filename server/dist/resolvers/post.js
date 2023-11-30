@@ -46,7 +46,10 @@ PaginatedPosts = __decorate([
 ], PaginatedPosts);
 let PostResolver = class PostResolver {
     textSnippet(root) {
-        return root.text.slice(0, 50);
+        if (root.text.length > 50) {
+            return root.text.slice(0, 50) + "...";
+        }
+        return root.text;
     }
     async posts(limit, cursor) {
         const realLimit = Math.min(50, limit) + 1;

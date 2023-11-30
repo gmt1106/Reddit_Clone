@@ -25,7 +25,9 @@ export const InputField: React.FC<InputFieldProps> = ({
   const [field, { error }] = useField(props);
   let childComponent;
   if (textarea) {
-    childComponent = <Textarea placeholder={props.placeholder} />;
+    childComponent = (
+      <Textarea {...field} id={field.name} placeholder={props.placeholder} />
+    );
   } else {
     childComponent = (
       <Input

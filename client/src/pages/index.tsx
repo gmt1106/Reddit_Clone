@@ -13,11 +13,12 @@ import {
   Text,
 } from "@chakra-ui/react";
 import { useState } from "react";
+import { PAGINATION_LIMIT } from "../constants";
 
 const Index = () => {
   // This is to support pagination. Using setVariables() get the next page.
   const [variables, setVariables] = useState({
-    limit: 20,
+    limit: PAGINATION_LIMIT,
     cursor: null as null | string,
   });
 
@@ -47,8 +48,9 @@ const Index = () => {
         <Stack>
           {data!.posts.posts.map((post) => (
             <Box key={post.id} p={5} shadow="md" borderWidth="1px">
-              <Heading fontSize="xl">{post.title}</Heading>
-              <Text mt={4}>{post.textSnippet + "..."}</Text>
+              <Heading fontSize="xl">{post.title}</Heading>{" "}
+              <Text>Posted by {post.creator.username}</Text>
+              <Text mt={4}>{post.textSnippet}</Text>
             </Box>
           ))}
         </Stack>

@@ -5,13 +5,9 @@ import {
   Resolver,
 } from "@urql/exchange-graphcache";
 import Router from "next/router";
-import {
-  dedupExchange,
-  Exchange,
-  fetchExchange,
-  stringifyVariables,
-} from "urql";
+import { dedupExchange, Exchange, fetchExchange } from "urql";
 import { pipe, tap } from "wonka";
+import { PAGINATION_LIMIT } from "../constants";
 import {
   LoginMutation,
   LogoutMutation,
@@ -215,6 +211,22 @@ export const createUrqlClient = (ssrExchange: any) => ({
                 };
               }
             );
+          },
+          createPost: (_result, _args, cache, _info) => {
+            // You can see the changes list of query with this log
+            // console.log(cache.inspectFields("Query"));
+
+            // createPost is adding a new post in the DB. In the client side (here) we are removing this cache to make refetch this data from the server.
+            // But the problem is that we have the long list of paginationedPosts, so we need to invalidate all of them.
+            // So when we are redirected to the main page after creating a post, new post will be there.
+            const allFields = cache.inspectFields("Query");
+            const fieldInfos = allFields.filter(
+              (info) => info.fieldName === "posts"
+            );
+            fieldInfos.forEach((fieldInfo) => {
+              cache.invalidate("Query", "posts", fieldInfo.arguments || {});
+            });
+            // console.log(cache.inspectFields("Query"));
           },
         },
       },
