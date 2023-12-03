@@ -7,14 +7,15 @@ import {
 import Router from "next/router";
 import { dedupExchange, Exchange, fetchExchange } from "urql";
 import { pipe, tap } from "wonka";
-import { PAGINATION_LIMIT } from "../constants";
 import {
   LoginMutation,
   LogoutMutation,
   MeDocument,
   MeQuery,
   RegisterMutation,
+  VoteMutationVariables,
 } from "../generated/graphql";
+import { gql } from "@urql/core";
 
 // Global Error Handling
 // This will allow us to catch all errors. A way to deal with general error.
@@ -227,6 +228,33 @@ export const createUrqlClient = (ssrExchange: any) => ({
               cache.invalidate("Query", "posts", fieldInfo.arguments || {});
             });
             // console.log(cache.inspectFields("Query"));
+          },
+          vote: (_result, args, cache, _info) => {
+            // URQL, Read fragment
+            // https://formidable.com/open-source/urql/docs/api/graphcache/#readfragment
+            const { postId, value } = args as VoteMutationVariables;
+            const data = cache.readFragment(
+              gql`
+                fragment _ on Post {
+                  id
+                  points
+                }
+              `,
+              { id: postId }
+            );
+            if (data) {
+              const newPoints = (data.points as number) + value;
+              // URQL, Write fragment
+              // https://formidable.com/open-source/urql/docs/api/graphcache/#writefragment
+              cache.writeFragment(
+                gql`
+                  fragment __ on Post {
+                    points
+                  }
+                `,
+                { id: postId, points: newPoints }
+              );
+            }
           },
         },
       },

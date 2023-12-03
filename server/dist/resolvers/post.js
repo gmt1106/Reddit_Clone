@@ -104,16 +104,34 @@ let PostResolver = class PostResolver {
         const isUpVote = value > 0;
         const realValue = isUpVote ? 1 : -1;
         const { userId } = req.session;
-        await UpVote_1.UpVote.insert({
-            userId,
-            postId,
-            value: realValue,
-        });
-        index_1.appDataSource.query(`
-    update post
-    set points = points + ${realValue}
-    where id = ${postId};
-    `);
+        const upVote = await UpVote_1.UpVote.findOne({ where: { postId, userId } });
+        if (upVote && upVote.value !== realValue) {
+            await index_1.appDataSource.transaction(async (tm) => {
+                await tm.query(`
+          update up_vote 
+          set value = $1
+          where "postId" = $2 and "userId" = $3
+          `, [realValue, postId, userId]);
+                await tm.query(`
+        update post
+        set points = points + $1
+        where id = $2
+        `, [2 * realValue, postId]);
+            });
+        }
+        else if (!upVote) {
+            await index_1.appDataSource.transaction(async (tm) => {
+                await tm.query(`
+        insert into up_vote ("userId", "postId", value)
+        values ($1, $2, $3)
+        `, [userId, postId, realValue]);
+                await tm.query(`
+        update post
+        set points = points + $1
+        where id = $2
+        `, [realValue, postId]);
+            });
+        }
         return true;
     }
 };

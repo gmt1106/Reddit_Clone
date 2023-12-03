@@ -14,6 +14,7 @@ import {
 } from "@chakra-ui/react";
 import { useState } from "react";
 import { PAGINATION_LIMIT } from "../constants";
+import { UpvoteSection } from "../components/UpvoteSection";
 
 const Index = () => {
   // This is to support pagination. Using setVariables() get the next page.
@@ -47,11 +48,14 @@ const Index = () => {
       ) : (
         <Stack>
           {data!.posts.posts.map((post) => (
-            <Box key={post.id} p={5} shadow="md" borderWidth="1px">
-              <Heading fontSize="xl">{post.title}</Heading>{" "}
-              <Text>Posted by {post.creator.username}</Text>
-              <Text mt={4}>{post.textSnippet}</Text>
-            </Box>
+            <Flex key={post.id} p={5} shadow="md" borderWidth="1px">
+              <UpvoteSection post={post} />
+              <Box>
+                <Heading fontSize="xl">{post.title}</Heading>
+                <Text>Posted by {post.creator.username}</Text>
+                <Text mt={4}>{post.textSnippet}</Text>
+              </Box>
+            </Flex>
           ))}
         </Stack>
       )}

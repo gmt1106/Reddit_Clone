@@ -182,21 +182,58 @@ export class PostResolver {
     const realValue = isUpVote ? 1 : -1; // even if they up vote to 30, it will only increase by one
     const { userId } = req.session;
 
-    // add a new entry in UpVote table
-    await UpVote.insert({
-      userId,
-      postId,
-      value: realValue,
-    });
+    // Find if the entry already in DB
+    const upVote = await UpVote.findOne({ where: { postId, userId } });
 
-    // update post's point column
-    appDataSource.query(
-      `
-    update post
-    set points = points + ${realValue}
-    where id = ${postId};
-    `
-    );
+    // The user alreay voted the post before and they are try to up change their vote from up vote to down vote or from down vote to up vote
+    if (upVote && upVote.value !== realValue) {
+      await appDataSource.transaction(async (tm) => {
+        // update the existing entry in UpVote table
+        await tm.query(
+          `
+          update up_vote 
+          set value = $1
+          where "postId" = $2 and "userId" = $3
+          `,
+          [realValue, postId, userId]
+        );
+        // update post's point column
+        // If someone change from up vote to down vote, then we need to remove one up vote and add one down vote so we need to subtract two points from the post point
+        // Similarly, if some one change from down vote to up vote, then we need to add two points to the post point
+        await tm.query(
+          `
+        update post
+        set points = points + $1
+        where id = $2
+        `,
+          [2 * realValue, postId]
+        );
+      });
+    } else if (!upVote) {
+      // The user never voted before.
+      // Using the transaction function, typeorm deal with the error occuring during query
+      await appDataSource.transaction(async (tm) => {
+        // add a new entry in UpVote table
+        await tm.query(
+          `
+        insert into up_vote ("userId", "postId", value)
+        values ($1, $2, $3)
+        `,
+          [userId, postId, realValue]
+        );
+        // update post's point column
+        await tm.query(
+          `
+        update post
+        set points = points + $1
+        where id = $2
+        `,
+          [realValue, postId]
+        );
+      });
+    }
+
+    // When users try to up vote that they already up voted or down vote that they already down voted then nothing will happen
 
     return true;
   }
