@@ -238,21 +238,30 @@ export const createUrqlClient = (ssrExchange: any) => ({
                 fragment _ on Post {
                   id
                   points
+                  voteStatus
                 }
               `,
               { id: postId }
             );
             if (data) {
-              const newPoints = (data.points as number) + value;
+              // if the user try to down vote or up vote again, don't do anything
+              if (data.voteStatus === value) {
+                return;
+              }
+              // !data.voteStatus ? 1 : 2  => if user try to change their vote, mutiply to value by 2
+              // because when user try to change up vote to down vote, we need to remove up vote and add down vote so need to do -2
+              const newPoints =
+                (data.points as number) + (!data.voteStatus ? 1 : 2) * value;
               // URQL, Write fragment
               // https://formidable.com/open-source/urql/docs/api/graphcache/#writefragment
               cache.writeFragment(
                 gql`
                   fragment __ on Post {
                     points
+                    voteStatus
                   }
                 `,
-                { id: postId, points: newPoints }
+                { id: postId, points: newPoints, voteStatus: value }
               );
             }
           },

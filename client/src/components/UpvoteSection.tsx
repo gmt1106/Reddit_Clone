@@ -25,6 +25,7 @@ export const UpvoteSection: React.FC<UpvoteSectionProps> = ({ post }) => {
           });
           setLoadingState("not-loading");
         }}
+        colorScheme={post.voteStatus === 1 ? "green" : undefined}
         isLoading={loadingState === "upvote-loading"}
         aria-label="Up vote post"
         icon={<ChevronUpIcon />}
@@ -39,6 +40,7 @@ export const UpvoteSection: React.FC<UpvoteSectionProps> = ({ post }) => {
           });
           setLoadingState("not-loading");
         }}
+        colorScheme={post.voteStatus === -1 ? "red" : undefined}
         isLoading={loadingState === "downvote-loading"}
         aria-label="Down vote post"
         icon={<ChevronDownIcon />}

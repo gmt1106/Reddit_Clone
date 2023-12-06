@@ -51,7 +51,7 @@ let PostResolver = class PostResolver {
         }
         return root.text;
     }
-    async posts(limit, cursor) {
+    async posts(limit, cursor, { req }) {
         const realLimit = Math.min(50, limit) + 1;
         const realLimitPlusOne = realLimit + 1;
         const replacements = [realLimitPlusOne];
@@ -66,7 +66,10 @@ let PostResolver = class PostResolver {
       'email', u.email,
       'createdAt', u."createdAt",
       'updatedAt', u."updatedAt"
-      ) creator
+      ) creator,
+      ${req.session.userId
+            ? `(select value from up_vote where "userId" = ${req.session.userId} and "postId" = p.id) "voteStatus"`
+            : 'null as "voteStatus"'}
     from post p
     inner join public.user u on u.id = p."creatorId"
     ${cursor ? `where p."createdAt" < $2` : ""}
@@ -146,8 +149,9 @@ __decorate([
     (0, type_graphql_1.Query)(() => PaginatedPosts),
     __param(0, (0, type_graphql_1.Arg)("limit", () => type_graphql_1.Int)),
     __param(1, (0, type_graphql_1.Arg)("cursor", () => String, { nullable: true })),
+    __param(2, (0, type_graphql_1.Ctx)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Number, Object]),
+    __metadata("design:paramtypes", [Number, Object, Object]),
     __metadata("design:returntype", Promise)
 ], PostResolver.prototype, "posts", null);
 __decorate([

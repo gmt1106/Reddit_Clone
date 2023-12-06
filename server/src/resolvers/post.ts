@@ -55,7 +55,8 @@ export class PostResolver {
     // Arguments for pagination
     @Arg("limit", () => Int) limit: number,
     // Note that very first time we fetch posts, we are not going to have cursor so must be nullable
-    @Arg("cursor", () => String, { nullable: true }) cursor: string | null // This is string type but the value will be the Date the post is created in milisecond
+    @Arg("cursor", () => String, { nullable: true }) cursor: string | null, // This is string type but the value will be the Date the post is created in milisecond
+    @Ctx() { req }: Context
   ): Promise<PaginatedPosts> {
     // setting typescript return type with of post in promise
     // want to query everything from the database and return
@@ -89,7 +90,12 @@ export class PostResolver {
       'email', u.email,
       'createdAt', u."createdAt",
       'updatedAt', u."updatedAt"
-      ) creator
+      ) creator,
+      ${
+        req.session.userId
+          ? `(select value from up_vote where "userId" = ${req.session.userId} and "postId" = p.id) "voteStatus"`
+          : 'null as "voteStatus"'
+      }
     from post p
     inner join public.user u on u.id = p."creatorId"
     ${cursor ? `where p."createdAt" < $2` : ""}

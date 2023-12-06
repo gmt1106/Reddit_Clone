@@ -1,4 +1,4 @@
-import { Field, ObjectType } from "type-graphql";
+import { Field, Int, ObjectType } from "type-graphql";
 import {
   BaseEntity, // allow us to have easy commands that we can run to run sql ex) Post.find() , Post.insert() which are used in resolvers
   Column,
@@ -34,6 +34,10 @@ export class Post extends BaseEntity {
   @Field()
   @Column({ type: "int", default: 0 })
   points!: number;
+
+  // This is only a graphql schema value
+  @Field(() => Int, { nullable: true })
+  voteStatus: number | null; // The value will be one of three: 1 or -1 or null
 
   @Field(() => User)
   // set up a foreign key in the User table
