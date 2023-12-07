@@ -22,6 +22,9 @@ export const NavBar: React.FC<NavBarProps> = ({}) => {
   useEffect(() => setIsServer(false), []);
   const [{ data, fetching }] = useMeQuery({
     pause: isServer, // now when I am in server, data will be undefined instead of null, which mean it is not runing request anymore.
+
+    // now we can remove this pause since we now do the server side render Cookie Forwarding to set voteStatus value in Post entities.
+    // But still we don't want to do the server side render so won't remove it.
   });
 
   // Need to see if it is loading (fetching)
