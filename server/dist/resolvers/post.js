@@ -54,10 +54,6 @@ let PostResolver = class PostResolver {
     async posts(limit, cursor, { req }) {
         const realLimit = Math.min(50, limit) + 1;
         const realLimitPlusOne = realLimit + 1;
-        const replacements = [realLimitPlusOne];
-        if (cursor) {
-            replacements.push(new Date(parseInt(cursor)));
-        }
         const posts = await index_1.appDataSource.query(`
     select p.*, 
     json_build_object(
@@ -72,10 +68,10 @@ let PostResolver = class PostResolver {
             : 'null as "voteStatus"'}
     from post p
     inner join public.user u on u.id = p."creatorId"
-    ${cursor ? `where p."createdAt" < $2` : ""}
+    ${cursor ? `where p."createdAt" < ${new Date(parseInt(cursor))}` : ""} 
     order by p."createdAt" DESC
-    limit $1
-    `, replacements);
+    limit ${realLimitPlusOne}
+    `);
         console.log(posts);
         return {
             posts: posts.slice(0, realLimit),

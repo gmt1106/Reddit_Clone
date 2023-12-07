@@ -70,12 +70,7 @@ export class PostResolver {
     // If the realLimit is 20 then fetch 21 posts. By this was we can tell if next page to fetch is there or not.
     const realLimitPlusOne = realLimit + 1;
 
-    // Write raw sql when query builder is not working
-    const replacements: any[] = [realLimitPlusOne];
-    if (cursor) {
-      // need the format milisecond into Date form
-      replacements.push(new Date(parseInt(cursor)));
-    }
+    ///////// Write raw sql when query builder is not working
     // In postgresql, there are multiple schemas that can be inside of your database, so you need to specify that you want the public schema for user table => public.user
     // graphql wants creator objact instead of just username column value from user table. In the postgresql, there is a handy feature that we can tell we want json object back instead of just a column value.
     // => json_build_object('username', u.username) creator      this means create an object called "creator" which has a field named "username" with value u.username. creator name is from grapql defintion in Post.ts.
@@ -98,14 +93,13 @@ export class PostResolver {
       }
     from post p
     inner join public.user u on u.id = p."creatorId"
-    ${cursor ? `where p."createdAt" < $2` : ""}
+    ${cursor ? `where p."createdAt" < ${new Date(parseInt(cursor))}` : ""} 
     order by p."createdAt" DESC
-    limit $1
-    `,
-      replacements
+    limit ${realLimitPlusOne}
+    `
     );
 
-    // // Using query builder to create sql query
+    // ///////// Using query builder to create sql query
     // const queryBuilder = appDataSource
     //   .getRepository(Post)
     //   .createQueryBuilder("p")
