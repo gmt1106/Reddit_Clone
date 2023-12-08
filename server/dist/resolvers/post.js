@@ -54,6 +54,10 @@ let PostResolver = class PostResolver {
     async posts(limit, cursor, { req }) {
         const realLimit = Math.min(50, limit) + 1;
         const realLimitPlusOne = realLimit + 1;
+        const replacements = [realLimitPlusOne];
+        if (cursor) {
+            replacements.push(new Date(parseInt(cursor)));
+        }
         const posts = await index_1.appDataSource.query(`
     select p.*, 
     json_build_object(
@@ -68,10 +72,10 @@ let PostResolver = class PostResolver {
             : 'null as "voteStatus"'}
     from post p
     inner join public.user u on u.id = p."creatorId"
-    ${cursor ? `where p."createdAt" < ${new Date(parseInt(cursor))}` : ""} 
+    ${cursor ? `where p."createdAt" < $2` : ""} 
     order by p."createdAt" DESC
-    limit ${realLimitPlusOne}
-    `);
+    limit $1
+    `, replacements);
         console.log(posts);
         return {
             posts: posts.slice(0, realLimit),
@@ -79,7 +83,7 @@ let PostResolver = class PostResolver {
         };
     }
     post(id) {
-        return Post_1.Post.findOne({ where: { id } });
+        return Post_1.Post.findOne({ where: { id }, relations: ["creator"] });
     }
     async createPost(createPostInput, { req }) {
         return Post_1.Post.create(Object.assign(Object.assign({}, createPostInput), { creatorId: req.session.userId })).save();
@@ -152,7 +156,7 @@ __decorate([
 ], PostResolver.prototype, "posts", null);
 __decorate([
     (0, type_graphql_1.Query)(() => Post_1.Post, { nullable: true }),
-    __param(0, (0, type_graphql_1.Arg)("id")),
+    __param(0, (0, type_graphql_1.Arg)("id", () => type_graphql_1.Int)),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [Number]),
     __metadata("design:returntype", Promise)

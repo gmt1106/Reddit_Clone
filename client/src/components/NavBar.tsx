@@ -1,4 +1,4 @@
-import { Box, Link, Flex, Button } from "@chakra-ui/react";
+import { Box, Link, Flex, Button, Heading } from "@chakra-ui/react";
 import React from "react";
 // The reason that we use NextLink is it uses client side routing
 // How to use it is that wrap any link with NextLink
@@ -68,7 +68,12 @@ export const NavBar: React.FC<NavBarProps> = ({}) => {
     );
   }
   return (
-    <Flex zIndex={1} position="sticky" top={0} bg="teal" p={4}>
+    <Flex zIndex={1} position="sticky" top={0} bg="teal" p={4} align="center">
+      <NextLink href={"/"}>
+        <Link color="white">
+          <Heading>Reddit Clone</Heading>
+        </Link>
+      </NextLink>
       <Box ml={"auto"}>{body}</Box>
     </Flex>
   );
