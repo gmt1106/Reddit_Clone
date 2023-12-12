@@ -21,7 +21,7 @@ export class UpVote extends BaseEntity {
   @PrimaryColumn()
   postId: number;
 
-  @ManyToOne(() => Post, (post) => post.upVotes)
+  @ManyToOne(() => Post, (post) => post.upVotes, { onDelete: "CASCADE" })
   post: Post;
 
   // This indicate if this entity for is for up vote or down vote

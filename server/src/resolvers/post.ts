@@ -173,8 +173,30 @@ export class PostResolver {
 
   // delete a post
   @Mutation(() => Boolean)
-  async deletePost(@Arg("id") id: number): Promise<boolean> {
-    await Post.delete(id);
+  @UseMiddleware(isAuth) // users can't call delete post if they are not logged in
+  async deletePost(
+    @Arg("id", () => Int) id: number,
+    @Ctx() { req }: Context
+  ): Promise<boolean> {
+    ////////// delete without cascade way
+    // const post = await Post.findOne({ where: { id } });
+    // // If a post with given id does not exist
+    // if (!post) {
+    //   return false;
+    // }
+    // // If creator of the post is not the logged in user
+    // if (post.creatorId !== req.session.userId) {
+    //   throw new Error("not authroized");
+    // }
+    // // Delete the record in up_vote table that use post id as foreign key
+    // await UpVote.delete({ postId: id });
+    // // Elements in {} are for where condition in sql query
+    // // User can delete post only if they own it
+    // await Post.delete({ id, creatorId: req.session.userId });
+
+    ////////// delete with cascade way
+    // update the UpVote entity
+    await Post.delete({ id, creatorId: req.session.userId });
     return true;
   }
 

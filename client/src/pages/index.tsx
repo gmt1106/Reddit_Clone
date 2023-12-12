@@ -1,6 +1,6 @@
 import { withUrqlClient } from "next-urql";
 import { createUrqlClient } from "../utils/createUrqlClient";
-import { usePostsQuery } from "../generated/graphql";
+import { useDeletePostMutation, usePostsQuery } from "../generated/graphql";
 import { Layout } from "../components/Layout";
 import NextLink from "next/link";
 import {
@@ -15,6 +15,7 @@ import {
 import { useState } from "react";
 import { PAGINATION_LIMIT } from "../constants";
 import { UpvoteSection } from "../components/UpvoteSection";
+import { DeleteIcon } from "@chakra-ui/icons";
 
 const Index = () => {
   // This is to support pagination. Using setVariables() get the next page.
@@ -32,36 +33,48 @@ const Index = () => {
     variables,
   });
 
+  const [, deletePost] = useDeletePostMutation();
+
   if (!fetching && !data) {
     return <div> you got query failed for some reason</div>;
   }
   return (
     <Layout>
-      <Flex align="center">
-        <Heading>Reddit Clone</Heading>
-        <NextLink href="/create-post">
-          <Link ml="auto">create post</Link>
-        </NextLink>
-      </Flex>
       {fetching && !data ? (
         <div>loading...</div>
       ) : (
         <Stack>
-          {data!.posts.posts.map((post) => (
-            <Flex key={post.id} p={5} shadow="md" borderWidth="1px">
-              <UpvoteSection post={post} />
-              <Box>
-                {/* Linking to dynamic path: https://nextjs.org/docs/pages/building-your-application/routing/linking-and-navigating#linking-to-dynamic-paths */}
-                <NextLink href={`/post/${encodeURIComponent(post.id)}`}>
-                  <Link>
-                    <Heading fontSize="xl">{post.title}</Heading>
-                  </Link>
-                </NextLink>
-                <Text>Posted by {post.creator.username}</Text>
-                <Text mt={4}>{post.textSnippet}</Text>
-              </Box>
-            </Flex>
-          ))}
+          {
+            // after doing post delete cache update, there will be some posts that are null
+            data!.posts.posts.map((post) =>
+              !post ? null : (
+                <Flex key={post.id} p={5} shadow="md" borderWidth="1px">
+                  <UpvoteSection post={post} />
+                  <Box flex={1}>
+                    {/* Linking to dynamic path: https://nextjs.org/docs/pages/building-your-application/routing/linking-and-navigating#linking-to-dynamic-paths */}
+                    <NextLink href={`/post/${encodeURIComponent(post.id)}`}>
+                      <Link>
+                        <Heading fontSize="xl">{post.title}</Heading>
+                      </Link>
+                    </NextLink>
+                    <Text>Posted by {post.creator.username}</Text>
+                    <Flex align="center">
+                      <Text flex={1} mt={4}>
+                        {post.textSnippet}
+                      </Text>
+                      <DeleteIcon
+                        aria-label="Delete Post"
+                        color="red"
+                        onClick={() => {
+                          deletePost({ id: post.id });
+                        }}
+                      />
+                    </Flex>
+                  </Box>
+                </Flex>
+              )
+            )
+          }
         </Stack>
       )}
       {data && data.posts.hasMore ? (
