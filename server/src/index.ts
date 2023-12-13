@@ -96,8 +96,8 @@ const main = async () => {
         // sameSite: "lax", // protecting in csrf
         // secure: __prod__, // cookie only wors in https. Off when it is connect to local host
         // ********** this is a setting for the Apollo Studio to send cookies **********
-        // sameSite: "none",
-        // secure: true,
+        sameSite: "none",
+        secure: true,
       },
       saveUninitialized: false, // means when the value is set to true, it will create session by default even if you didn't store any data in it
       secret: "kadfljskdjfiwoenvskdnvkdsgjlei",

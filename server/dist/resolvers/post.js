@@ -88,16 +88,18 @@ let PostResolver = class PostResolver {
     async createPost(createPostInput, { req }) {
         return Post_1.Post.create(Object.assign(Object.assign({}, createPostInput), { creatorId: req.session.userId })).save();
     }
-    async updatePost(id, title) {
-        const post = await Post_1.Post.findOne({ where: { id } });
-        if (!post) {
-            return null;
-        }
-        if (typeof title !== "undefined") {
-            post.title = title;
-            await Post_1.Post.update({ id }, { title });
-        }
-        return post;
+    async updatePost(id, title, text, { req }) {
+        const result = await index_1.appDataSource
+            .createQueryBuilder()
+            .update(Post_1.Post)
+            .set({ title, text })
+            .where('id = :id and "creatorId" = :creatorId', {
+            id,
+            creatorId: req.session.userId,
+        })
+            .returning("*")
+            .execute();
+        return result.raw[0];
     }
     async deletePost(id, { req }) {
         await Post_1.Post.delete({ id, creatorId: req.session.userId });
@@ -172,10 +174,13 @@ __decorate([
 ], PostResolver.prototype, "createPost", null);
 __decorate([
     (0, type_graphql_1.Mutation)(() => Post_1.Post, { nullable: true }),
-    __param(0, (0, type_graphql_1.Arg)("id")),
-    __param(1, (0, type_graphql_1.Arg)("title", () => String, { nullable: true })),
+    (0, type_graphql_1.UseMiddleware)(isAuth_1.isAuth),
+    __param(0, (0, type_graphql_1.Arg)("id", () => type_graphql_1.Int)),
+    __param(1, (0, type_graphql_1.Arg)("title")),
+    __param(2, (0, type_graphql_1.Arg)("text")),
+    __param(3, (0, type_graphql_1.Ctx)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Number, String]),
+    __metadata("design:paramtypes", [Number, String, String, Object]),
     __metadata("design:returntype", Promise)
 ], PostResolver.prototype, "updatePost", null);
 __decorate([

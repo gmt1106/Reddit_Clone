@@ -143,7 +143,7 @@ export const createUrqlClient = (ssrExchange: any, ctx: any) => {
   // note that ctx is only available in the server, but this code is running both in browser and server. So check if it is server.
   if (typeof window === "undefined") {
     // console.log(ctx.req.headers.cookie);
-    cookie = ctx.req.headers.cookie;
+    cookie = ctx?.req?.headers?.cookie;
   }
   return {
     // client is my graphQL server
