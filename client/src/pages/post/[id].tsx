@@ -1,5 +1,6 @@
 import { Box, Heading } from "@chakra-ui/react";
 import { withUrqlClient } from "next-urql";
+import { EditDeletePostButtons } from "../../components/EditDeletePostButtons";
 import { Layout } from "../../components/Layout";
 import { createUrqlClient } from "../../utils/createUrqlClient";
 import { useGetPostFromUrl } from "../../utils/useGetPostFromUrl";
@@ -23,7 +24,11 @@ export const Post = ({}) => {
   return (
     <Layout>
       <Heading mb={4}>{data?.post?.title}</Heading>
-      {data?.post?.text}
+      <Box mb={4}> {data?.post?.text}</Box>
+      <EditDeletePostButtons
+        id={data?.post?.id}
+        creatorId={data?.post?.creatorId}
+      />
     </Layout>
   );
 };

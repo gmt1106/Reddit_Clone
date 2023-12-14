@@ -1,12 +1,3 @@
-import { withUrqlClient } from "next-urql";
-import { createUrqlClient } from "../utils/createUrqlClient";
-import {
-  useDeletePostMutation,
-  useMeQuery,
-  usePostsQuery,
-} from "../generated/graphql";
-import { Layout } from "../components/Layout";
-import NextLink from "next/link";
 import {
   Box,
   Button,
@@ -16,10 +7,19 @@ import {
   Stack,
   Text,
 } from "@chakra-ui/react";
+import { withUrqlClient } from "next-urql";
+import NextLink from "next/link";
 import { useState } from "react";
-import { PAGINATION_LIMIT } from "../constants";
+import { EditDeletePostButtons } from "../components/EditDeletePostButtons";
+import { Layout } from "../components/Layout";
 import { UpvoteSection } from "../components/UpvoteSection";
-import { DeleteIcon, EditIcon } from "@chakra-ui/icons";
+import { PAGINATION_LIMIT } from "../constants";
+import {
+  useDeletePostMutation,
+  useMeQuery,
+  usePostsQuery,
+} from "../generated/graphql";
+import { createUrqlClient } from "../utils/createUrqlClient";
 
 const Index = () => {
   // This is to support pagination. Using setVariables() get the next page.
@@ -36,11 +36,6 @@ const Index = () => {
   const [{ data, fetching }] = usePostsQuery({
     variables,
   });
-
-  const [, deletePost] = useDeletePostMutation();
-
-  // fetch logged in user to disable delete and edit buttons
-  const [{ data: loggedInUserData }] = useMeQuery();
 
   if (!fetching && !data) {
     return <div> you got query failed for some reason</div>;
@@ -69,22 +64,12 @@ const Index = () => {
                       <Text flex={1} mt={4}>
                         {post.textSnippet}
                       </Text>
-                      {loggedInUserData?.me?.id !== post.creatorId ? null : (
-                        <Box mt="auto">
-                          <NextLink
-                            href={"/post/edit/[id]"}
-                            as={`/post/edit/${post.id}`}
-                          >
-                            <EditIcon mr={4} aria-label="Edit Post" />
-                          </NextLink>
-                          <DeleteIcon
-                            aria-label="Delete Post"
-                            onClick={() => {
-                              deletePost({ id: post.id });
-                            }}
-                          />
-                        </Box>
-                      )}
+                      <Box mt="auto">
+                        <EditDeletePostButtons
+                          id={post.id}
+                          creatorId={post.creatorId}
+                        />
+                      </Box>
                     </Flex>
                   </Box>
                 </Flex>
