@@ -1,10 +1,12 @@
 import { Request, Response } from "express";
 import { Redis } from "ioredis";
 import { DataSource } from "typeorm";
+import { createUserLoader } from "./utils/createUserLoader";
 
 export type Context = {
   appDataSource: DataSource;
   req: Request & { session: Express.Request["session"] };
   redis: Redis;
   res: Response;
+  userLoader: ReturnType<typeof createUserLoader>;
 };

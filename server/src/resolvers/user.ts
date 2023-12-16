@@ -13,7 +13,7 @@ import {
 import { User } from "../entities/User";
 import argon2 from "argon2";
 import { COOKIE_NAME, FORGOT_PASSWORD_PREFIX } from "../constants";
-import { RegisterInput } from "./registerInput";
+import { RegisterInput } from "./RegisterInput";
 import { validateRegister } from "../utils/validateRegister";
 import { sendEmail } from "../utils/sendEmail";
 import { v4 as uuidv4 } from "uuid";

@@ -21,6 +21,7 @@ const Post_1 = require("./entities/Post");
 const User_1 = require("./entities/User");
 const path_1 = __importDefault(require("path"));
 const UpVote_1 = require("./entities/UpVote");
+const createUserLoader_1 = require("./utils/createUserLoader");
 exports.appDataSource = new typeorm_1.DataSource({
     type: "postgres",
     username: "redditclone",
@@ -65,7 +66,13 @@ const main = async () => {
             resolvers: [hello_1.HelloResolver, post_1.PostResolver, user_1.UserResolver],
             validate: false,
         }),
-        context: ({ req, res }) => ({ appDataSource: exports.appDataSource, req, res, redis }),
+        context: ({ req, res }) => ({
+            appDataSource: exports.appDataSource,
+            req,
+            res,
+            redis,
+            userLoader: (0, createUserLoader_1.createUserLoader)(),
+        }),
     });
     await apolloServer.start();
     apolloServer.applyMiddleware({

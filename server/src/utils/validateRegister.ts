@@ -1,4 +1,4 @@
-import { RegisterInput } from "src/resolvers/registerInput";
+import { RegisterInput } from "src/resolvers/RegisterInput";
 
 export const validateRegister = (registerInput: RegisterInput) => {
   // username shouldn't be empty

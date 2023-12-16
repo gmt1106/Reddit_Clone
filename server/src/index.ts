@@ -19,6 +19,7 @@ import { Post } from "./entities/Post";
 import { User } from "./entities/User";
 import path from "path";
 import { UpVote } from "./entities/UpVote";
+import { createUserLoader } from "./utils/createUserLoader";
 
 // things you want to store in session
 declare module "express-session" {
@@ -115,9 +116,16 @@ const main = async () => {
       resolvers: [HelloResolver, PostResolver, UserResolver],
       validate: false,
     }),
-    // it is a object that is accessable by all the resolver
+    // it is a object that is accessable by all resolvers
     // we can access the session(cookie) inside the resolver by passing in req and res
-    context: ({ req, res }): Context => ({ appDataSource, req, res, redis }),
+    // Note that context will be run every request, so new userLoader will be created every request, so it batches in caches loading of users within a single request.
+    context: ({ req, res }): Context => ({
+      appDataSource,
+      req,
+      res,
+      redis,
+      userLoader: createUserLoader(),
+    }),
   });
 
   // add graphql end point on express

@@ -17,6 +17,7 @@ import { Context } from "src/types";
 import { isAuth } from "../middleware/isAuth";
 import { appDataSource } from "../index";
 import { UpVote } from "../entities/UpVote";
+import { User } from "../entities/User";
 
 @InputType()
 class createPostInput {
@@ -49,6 +50,21 @@ export class PostResolver {
     return root.text;
   }
 
+  // Given a post, find the user that created the post.
+  // Now we are fetching User no matter where the post is coming from
+  @FieldResolver(() => User)
+  creator(@Root() post: Post, @Ctx() { userLoader }: Context) {
+    // without data loader
+    // return User.findOne({ where: { id: post.creatorId } });
+
+    // with data loader
+    return userLoader.load(post.creatorId);
+  }
+  // The problem with this field resolver is that when we load the home page, there will be one query to get n number of posts (differ by pagination),
+  // and n number of fetch query runs, one for each post to get creator user.
+  // This is bad, so to improve this, we use data loader. The data loader will batch that n query requests into a single sql statement.
+  // Therefore to load the home page, there will be one query to get posts and one query to get users
+
   // get the list of all posts
   @Query(() => PaginatedPosts) // setting graphql return type with [Post]
   async posts(
@@ -76,35 +92,63 @@ export class PostResolver {
       replacements.push(new Date(parseInt(cursor)));
     }
 
-    ///////// Write raw sql when query builder is not working
-    // In postgresql, there are multiple schemas that can be inside of your database, so you need to specify that you want the public schema for user table => public.user
-    // graphql wants creator objact instead of just username column value from user table. In the postgresql, there is a handy feature that we can tell we want json object back instead of just a column value.
-    // => json_build_object('username', u.username) creator      this means create an object called "creator" which has a field named "username" with value u.username. creator name is from grapql defintion in Post.ts.
-    // This is good way to fetch your data in graphql when you have relationships. Write a join and have a big query and that will grab all of your data. Then you don't have to worry about caching and data loader.
-    // The down side of this method is that you get creator object even if you didn't specify that you want to fetch that in the client side.
+    ///////// To impove the method that we are using raw sql, use field resolver, creator()
     const posts = await appDataSource.query(
       `
     select p.*, 
-    json_build_object(
-      'id', u.id,
-      'username', u.username,
-      'email', u.email,
-      'createdAt', u."createdAt",
-      'updatedAt', u."updatedAt"
-      ) creator,
       ${
         req.session.userId
           ? `(select value from up_vote where "userId" = ${req.session.userId} and "postId" = p.id) "voteStatus"`
           : 'null as "voteStatus"'
       }
     from post p
-    inner join public.user u on u.id = p."creatorId"
     ${cursor ? `where p."createdAt" < $2` : ""} 
     order by p."createdAt" DESC
     limit $1
     `,
       replacements
     );
+
+    // ///////// Write raw sql when query builder is not working
+    // In postgresql, there are multiple schemas that can be inside of your database, so you need to specify that you want the public schema for user table => public.user
+    // graphql wants creator objact instead of just username column value from user table. In the postgresql, there is a handy feature that we can tell we want json object back instead of just a column value.
+    // => json_build_object('username', u.username) creator      this means create an object called "creator" which has a field named "username" with value u.username. creator name is from grapql defintion in Post.ts.
+    // This is good way to fetch your data in graphql when you have relationships. Write a join and have a big query and that will grab all of your data. Then you don't have to worry about caching and data loader.
+    // The down side of this method is that you get creator object even if you didn't specify that you want to fetch that in the client side.
+    // const posts = await appDataSource.query(
+    //   `
+    // select p.*,
+    // json_build_object(
+    //   'id', u.id,
+    //   'username', u.username,
+    //   'email', u.email,
+    //   'createdAt', u."createdAt",
+    //   'updatedAt', u."updatedAt"
+    //   ) creator,
+    //   ${
+    //     req.session.userId
+    //       ? `(select value from up_vote where "userId" = ${req.session.userId} and "postId" = p.id) "voteStatus"`
+    //       : 'null as "voteStatus"'
+    //   }
+    // from post p
+    // inner join public.user u on u.id = p."creatorId"
+    // ${cursor ? `where p."createdAt" < $2` : ""}
+    // order by p."createdAt" DESC
+    // limit $1
+    // `,
+    //   replacements
+    // );
+    /*
+    Advantages of fetching data with sql query:
+    1. pretty simple
+    2. in general good in performance 
+
+    Disadvantages
+    1. Always fetching creator with join enven when we don't need it
+    2. It is better to spread out one big query into multiple smaller queries. if you take a look, logic for fetching creator is duplicated. It has the same logic with post().
+
+    So use the method that is using the field resolver
+    */
 
     // ///////// Using query builder to create sql query
     // const queryBuilder = appDataSource
@@ -138,7 +182,11 @@ export class PostResolver {
     // argument
     @Arg("id", () => Int) id: number
   ): Promise<Post | null> {
-    return Post.findOne({ where: { id }, relations: ["creator"] });
+    ///////// With field resolver, creator()
+    return Post.findOne({ where: { id } });
+
+    // ///////// Without field resolver, creator()
+    // return Post.findOne({ where: { id }, relations: ["creator"] });
   }
 
   // create a post

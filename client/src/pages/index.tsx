@@ -14,11 +14,7 @@ import { EditDeletePostButtons } from "../components/EditDeletePostButtons";
 import { Layout } from "../components/Layout";
 import { UpvoteSection } from "../components/UpvoteSection";
 import { PAGINATION_LIMIT } from "../constants";
-import {
-  useDeletePostMutation,
-  useMeQuery,
-  usePostsQuery,
-} from "../generated/graphql";
+import { usePostsQuery } from "../generated/graphql";
 import { createUrqlClient } from "../utils/createUrqlClient";
 
 const Index = () => {
@@ -33,12 +29,17 @@ const Index = () => {
 
   // Data will be null by default and fetching will be true. Then we will show loading...
   // We want load more button only when we have data.
-  const [{ data, fetching }] = usePostsQuery({
+  const [{ data, error, fetching }] = usePostsQuery({
     variables,
   });
 
   if (!fetching && !data) {
-    return <div> you got query failed for some reason</div>;
+    return (
+      <div>
+        <div> you got query failed for some reason</div>
+        <div>{error?.message}</div>
+      </div>
+    );
   }
   return (
     <Layout>

@@ -20,7 +20,7 @@ const type_graphql_1 = require("type-graphql");
 const User_1 = require("../entities/User");
 const argon2_1 = __importDefault(require("argon2"));
 const constants_1 = require("../constants");
-const registerInput_1 = require("./registerInput");
+const RegisterInput_1 = require("./RegisterInput");
 const validateRegister_1 = require("../utils/validateRegister");
 const sendEmail_1 = require("../utils/sendEmail");
 const uuid_1 = require("uuid");
@@ -210,7 +210,7 @@ __decorate([
     __param(0, (0, type_graphql_1.Arg)("registerInput")),
     __param(1, (0, type_graphql_1.Ctx)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [registerInput_1.RegisterInput, Object]),
+    __metadata("design:paramtypes", [RegisterInput_1.RegisterInput, Object]),
     __metadata("design:returntype", Promise)
 ], UserResolver.prototype, "register", null);
 __decorate([
