@@ -22,6 +22,7 @@ const User_1 = require("./entities/User");
 const path_1 = __importDefault(require("path"));
 const UpVote_1 = require("./entities/UpVote");
 const createUserLoader_1 = require("./utils/createUserLoader");
+const createUpVoteLoader_1 = require("./utils/createUpVoteLoader");
 exports.appDataSource = new typeorm_1.DataSource({
     type: "postgres",
     username: "redditclone",
@@ -53,14 +54,11 @@ const main = async () => {
         cookie: {
             maxAge: 1000 * 60 * 60 * 24 * 365 * 10,
             httpOnly: true,
-            sameSite: "none",
-            secure: true,
         },
         saveUninitialized: false,
         secret: "kadfljskdjfiwoenvskdnvkdsgjlei",
         resave: false,
     }));
-    app.set("trust proxy", !constants_1.__prod__);
     const apolloServer = new apollo_server_express_1.ApolloServer({
         schema: await (0, type_graphql_1.buildSchema)({
             resolvers: [hello_1.HelloResolver, post_1.PostResolver, user_1.UserResolver],
@@ -72,6 +70,7 @@ const main = async () => {
             res,
             redis,
             userLoader: (0, createUserLoader_1.createUserLoader)(),
+            upVoteLoader: (0, createUpVoteLoader_1.createUpVoteLoader)(),
         }),
     });
     await apolloServer.start();

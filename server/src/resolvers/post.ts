@@ -65,14 +65,25 @@ export class PostResolver {
   // This is bad, so to improve this, we use data loader. The data loader will batch that n query requests into a single sql statement.
   // Therefore to load the home page, there will be one query to get posts and one query to get users
 
+  @FieldResolver(() => Int, { nullable: true })
+  async voteStatus(@Root() post: Post, @Ctx() { upVoteLoader, req }: Context) {
+    if (!req.session.userId) {
+      return null;
+    }
+    const upVote = await upVoteLoader.load({
+      postId: post.id,
+      userId: req.session.userId,
+    });
+    return upVote ? upVote.value : null;
+  }
+
   // get the list of all posts
   @Query(() => PaginatedPosts) // setting graphql return type with [Post]
   async posts(
     // Arguments for pagination
     @Arg("limit", () => Int) limit: number,
     // Note that very first time we fetch posts, we are not going to have cursor so must be nullable
-    @Arg("cursor", () => String, { nullable: true }) cursor: string | null, // This is string type but the value will be the Date the post is created in milisecond
-    @Ctx() { req }: Context
+    @Arg("cursor", () => String, { nullable: true }) cursor: string | null // This is string type but the value will be the Date the post is created in milisecond
   ): Promise<PaginatedPosts> {
     // setting typescript return type with of post in promise
     // want to query everything from the database and return
@@ -95,12 +106,7 @@ export class PostResolver {
     ///////// To impove the method that we are using raw sql, use field resolver, creator()
     const posts = await appDataSource.query(
       `
-    select p.*, 
-      ${
-        req.session.userId
-          ? `(select value from up_vote where "userId" = ${req.session.userId} and "postId" = p.id) "voteStatus"`
-          : 'null as "voteStatus"'
-      }
+    select p.*
     from post p
     ${cursor ? `where p."createdAt" < $2` : ""} 
     order by p."createdAt" DESC
@@ -169,7 +175,6 @@ export class PostResolver {
     // // getMany(); is the function that actaully executes the sql
     // const posts = await queryBuilder.getMany();
 
-    console.log(posts);
     return {
       posts: posts.slice(0, realLimit), // sclie to only 20 posts
       hasMore: posts.length === realLimitPlusOne, // find out if there is next page or not

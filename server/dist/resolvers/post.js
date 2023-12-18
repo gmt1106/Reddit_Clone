@@ -55,7 +55,17 @@ let PostResolver = class PostResolver {
     creator(post, { userLoader }) {
         return userLoader.load(post.creatorId);
     }
-    async posts(limit, cursor, { req }) {
+    async voteStatus(post, { upVoteLoader, req }) {
+        if (!req.session.userId) {
+            return null;
+        }
+        const upVote = await upVoteLoader.load({
+            postId: post.id,
+            userId: req.session.userId,
+        });
+        return upVote ? upVote.value : null;
+    }
+    async posts(limit, cursor) {
         const realLimit = Math.min(50, limit) + 1;
         const realLimitPlusOne = realLimit + 1;
         const replacements = [realLimitPlusOne];
@@ -63,16 +73,12 @@ let PostResolver = class PostResolver {
             replacements.push(new Date(parseInt(cursor)));
         }
         const posts = await index_1.appDataSource.query(`
-    select p.*, 
-      ${req.session.userId
-            ? `(select value from up_vote where "userId" = ${req.session.userId} and "postId" = p.id) "voteStatus"`
-            : 'null as "voteStatus"'}
+    select p.*
     from post p
     ${cursor ? `where p."createdAt" < $2` : ""} 
     order by p."createdAt" DESC
     limit $1
     `, replacements);
-        console.log(posts);
         return {
             posts: posts.slice(0, realLimit),
             hasMore: posts.length === realLimitPlusOne,
@@ -152,12 +158,19 @@ __decorate([
     __metadata("design:returntype", void 0)
 ], PostResolver.prototype, "creator", null);
 __decorate([
+    (0, type_graphql_1.FieldResolver)(() => type_graphql_1.Int, { nullable: true }),
+    __param(0, (0, type_graphql_1.Root)()),
+    __param(1, (0, type_graphql_1.Ctx)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Post_1.Post, Object]),
+    __metadata("design:returntype", Promise)
+], PostResolver.prototype, "voteStatus", null);
+__decorate([
     (0, type_graphql_1.Query)(() => PaginatedPosts),
     __param(0, (0, type_graphql_1.Arg)("limit", () => type_graphql_1.Int)),
     __param(1, (0, type_graphql_1.Arg)("cursor", () => String, { nullable: true })),
-    __param(2, (0, type_graphql_1.Ctx)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Number, Object, Object]),
+    __metadata("design:paramtypes", [Number, Object]),
     __metadata("design:returntype", Promise)
 ], PostResolver.prototype, "posts", null);
 __decorate([
