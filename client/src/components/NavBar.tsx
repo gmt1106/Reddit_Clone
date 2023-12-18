@@ -5,6 +5,7 @@ import React from "react";
 import NextLink from "next/link";
 import { useLogoutMutation, useMeQuery } from "../generated/graphql";
 import { useEffect, useState } from "react";
+import { useRouter } from "next/router";
 
 interface NavBarProps {}
 
@@ -26,6 +27,7 @@ export const NavBar: React.FC<NavBarProps> = ({}) => {
     // now we can remove this pause since we now do the server side render Cookie Forwarding to set voteStatus value in Post entities.
     // But still we don't want to do the server side render so won't remove it.
   });
+  const router = useRouter();
 
   // Need to see if it is loading (fetching)
   const [{ fetching: logoutFetching }, logout] = useLogoutMutation();
@@ -62,8 +64,9 @@ export const NavBar: React.FC<NavBarProps> = ({}) => {
         <Button
           color="white"
           variant={"link"}
-          onClick={() => {
-            logout();
+          onClick={async () => {
+            await logout();
+            router.reload();
           }}
           isLoading={logoutFetching}
         >

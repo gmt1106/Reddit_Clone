@@ -40,6 +40,9 @@ class PaginatedPosts {
 // Add functions that are mutation or query
 @Resolver(Post) // state what we are resloving, Post
 export class PostResolver {
+  // Note: FieldResolver only runs when we include that field in query.
+  // For example, if we exclude creator or voteStatus field in graphql query in client, server won't run FieldResolver
+
   // This is not a field that is in DB. We are going to just create and send to the client
   // Not sending the whole text body of each post but sending snippet of it.
   @FieldResolver(() => String)

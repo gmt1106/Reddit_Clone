@@ -131,6 +131,17 @@ export const cursorPagination = (): Resolver<any, any, any> => {
   };
 };
 
+function invalidateAllPosts(cache: Cache) {
+  // You can see the changes in list of query with this log
+  // console.log(cache.inspectFields("Query"));
+
+  const allFields = cache.inspectFields("Query");
+  const fieldInfos = allFields.filter((info) => info.fieldName === "posts");
+  fieldInfos.forEach((fieldInfo) => {
+    cache.invalidate("Query", "posts", fieldInfo.arguments || {});
+  });
+}
+
 // https://formidable.com/open-source/urql/docs/advanced/server-side-rendering/#legacy-nextjs-pages
 // we can wrap components with this and this will optionally server side render pages
 // we get to choose which pages to be server side rendered
@@ -199,6 +210,7 @@ export const createUrqlClient = (ssrExchange: any, ctx: any) => {
                   }
                 }
               );
+              invalidateAllPosts(cache);
             },
             register: (registerResult, _args, cache, _info) => {
               typedUpdateQuery<RegisterMutation, MeQuery>(
@@ -231,20 +243,10 @@ export const createUrqlClient = (ssrExchange: any, ctx: any) => {
               );
             },
             createPost: (_result, _args, cache, _info) => {
-              // You can see the changes list of query with this log
-              // console.log(cache.inspectFields("Query"));
-
               // createPost is adding a new post in the DB. In the client side (here) we are removing this cache to make refetch this data from the server.
               // But the problem is that we have the long list of paginationedPosts, so we need to invalidate all of them.
               // So when we are redirected to the main page after creating a post, new post will be there.
-              const allFields = cache.inspectFields("Query");
-              const fieldInfos = allFields.filter(
-                (info) => info.fieldName === "posts"
-              );
-              fieldInfos.forEach((fieldInfo) => {
-                cache.invalidate("Query", "posts", fieldInfo.arguments || {});
-              });
-              // console.log(cache.inspectFields("Query"));
+              invalidateAllPosts(cache);
             },
             vote: (_result, args, cache, _info) => {
               // URQL, Read fragment
