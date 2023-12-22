@@ -18,6 +18,9 @@ RUN yarn
 # Bundle app source
 COPY . .
 
+# rename .env.production file to .env file in the prod
+COPY .env.production .env
+
 # Generate dist files
 RUN yarn build
 

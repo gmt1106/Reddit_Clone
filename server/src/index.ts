@@ -1,4 +1,7 @@
 import "reflect-metadata"; // typeorm need this
+// read in .env file and fill up the environment variable, and also looks at the .env.example file and throw error if not all of the environment variables exist
+// In the prod, instead of this library, dokku will fill up the environment variables
+import "dotenv-safe/config";
 import { DataSource } from "typeorm";
 import { COOKIE_NAME, __prod__ } from "./constants";
 import express from "express";
@@ -32,9 +35,10 @@ declare module "express-session" {
 // TypeORM's DataSource holds the database connection settings and establishes initial database connection
 export const appDataSource = new DataSource({
   type: "postgres",
-  username: "redditclone",
-  password: "redditclone1106",
-  database: "redditclone",
+  // username: "redditclone",
+  // password: "redditclone1106",
+  // database: "redditclone",
+  url: process.env.DATABASE_URL,
   entities: [Post, User, UpVote],
   synchronize: true, // TypeORM will create table automatically, don't have to run migratioin
   logging: true,
@@ -74,7 +78,7 @@ const main = async () => {
   // Session middleware will run before apollo middleware.
   // We need becase session middleware will run inside the apollo
   const RedisStore = connectRedis(session);
-  const redis = new Redis();
+  const redis = new Redis(process.env.REDIS_URI);
 
   // ********** this is a setting for the Apollo Studio and next.js app local host to connect server by settting cors globally in express middleware **********
   app.use(
@@ -83,7 +87,8 @@ const main = async () => {
     // ex) '/'
     cors({
       credentials: true,
-      origin: ["http://localhost:3000", "https://studio.apollographql.com"],
+      //for apollo origin: "https://studio.apollographql.com"
+      origin: [process.env.CORS_ORIGIN],
     })
   );
 
@@ -95,14 +100,14 @@ const main = async () => {
       cookie: {
         maxAge: 1000 * 60 * 60 * 24 * 365 * 10, // 10 years
         httpOnly: true, // from the javascript code in the frontend, can't access the cookie. This is good for security reason.
-        // sameSite: "lax", // protecting in csrf
-        // secure: __prod__, // cookie only wors in https. Off when it is connect to local host
+        sameSite: "lax", // protecting in csrf
+        secure: __prod__, // cookie only wors in https. Off when it is connect to local host
         // ********** this is a setting for the Apollo Studio to send cookies **********
         // sameSite: "none",
         // secure: true,
       },
       saveUninitialized: false, // means when the value is set to true, it will create session by default even if you didn't store any data in it
-      secret: "kadfljskdjfiwoenvskdnvkdsgjlei",
+      secret: process.env.SESSION_SECRET,
       resave: false,
     })
   );
@@ -145,7 +150,7 @@ const main = async () => {
   });
 
   //start local host 4000
-  app.listen(4000, () => {
+  app.listen(parseInt(process.env.PORT), () => {
     console.log("🚀 server started on localhost:4000");
   });
 };
