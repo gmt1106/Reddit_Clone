@@ -4,25 +4,35 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.sendEmail = void 0;
+require("dotenv-safe/config");
+("use strict");
 const nodemailer_1 = __importDefault(require("nodemailer"));
 async function sendEmail(to, html) {
     let transporter = nodemailer_1.default.createTransport({
-        host: "smtp.ethereal.email",
-        port: 587,
-        secure: false,
+        service: process.env.EMAIL_SERVICE,
+        host: process.env.EMAIL_HOST,
+        port: 465,
+        secure: true,
         auth: {
-            user: "loizkbyd6dofd6lh@ethereal.email",
-            pass: "BqNBEf2ex4EaaHq656",
+            user: process.env.EMAIL_USER,
+            pass: process.env.EMAIL_PASS,
         },
     });
-    let info = await transporter.sendMail({
-        from: '"Fred Foo 👻" <foo@example.com>',
+    console.log("password", process.env.EMAIL_PASS);
+    const mailOptions = {
+        from: `"Reddit Clone" <${process.env.EMAIL_USER}>`,
         to: to,
         subject: "Change password",
         html: html,
+    };
+    await transporter.sendMail(mailOptions, (error, info) => {
+        if (error) {
+            console.error("Error sending email: ", error);
+        }
+        else {
+            console.log("Email sent: ", info.response);
+        }
     });
-    console.log("Message sent: %s", info.messageId);
-    console.log("Preview URL: %s", nodemailer_1.default.getTestMessageUrl(info));
 }
 exports.sendEmail = sendEmail;
 //# sourceMappingURL=sendEmail.js.map

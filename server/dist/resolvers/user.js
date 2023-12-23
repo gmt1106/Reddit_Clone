@@ -16,6 +16,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.UserResolver = void 0;
+require("dotenv-safe/config");
 const type_graphql_1 = require("type-graphql");
 const User_1 = require("../entities/User");
 const argon2_1 = __importDefault(require("argon2"));
@@ -145,8 +146,8 @@ let UserResolver = class UserResolver {
             return true;
         }
         const token = (0, uuid_1.v4)();
-        await redis.set(constants_1.FORGOT_PASSWORD_PREFIX + token, user.id, "PX", 1000 * 60 * 60 * 24 * 3);
-        await (0, sendEmail_1.sendEmail)(email, `<a href="http://localhost:3000/change-password/${token}">reset passwrod</a>`);
+        await redis.set(constants_1.FORGOT_PASSWORD_PREFIX + token, user.id, "PX", 1000 * 60 * 15);
+        await (0, sendEmail_1.sendEmail)(email, changePasswordEmailHtml(token));
         return true;
     }
     async changePassword(token, newPassword, { req, redis }) {
@@ -250,4 +251,52 @@ UserResolver = __decorate([
     (0, type_graphql_1.Resolver)(User_1.User)
 ], UserResolver);
 exports.UserResolver = UserResolver;
+const changePasswordEmailHtml = (token) => {
+    return `<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Reset your password</title>
+  <!--[if mso]><style type="text/css">body, table, td, a { font-family: Arial, Helvetica, sans-serif !important; }</style><![endif]-->
+</head>
+
+<body style="font-family: Helvetica, Arial, sans-serif; margin: 0px; padding: 0px; background-color: #ffffff;">
+  <table role="presentation"
+    style="width: 100%; border-collapse: collapse; border: 0px; border-spacing: 0px; font-family: Arial, Helvetica, sans-serif; background-color: rgb(239, 239, 239);">
+    <tbody>
+      <tr>
+        <td align="center" style="padding: 1rem 2rem; vertical-align: top; width: 100%;">
+          <table role="presentation" style="max-width: 600px; border-collapse: collapse; border: 0px; border-spacing: 0px; text-align: left;">
+            <tbody>
+              <tr>
+                <td style="padding: 40px 0px 0px;">
+                  <div style="text-align: left;">
+                    <!---->
+                  </div>
+                  <div style="padding: 20px; background-color: rgb(255, 255, 255);">
+                    <div style="color: rgb(0, 0, 0); text-align: left;">
+                      <h1 style="margin: 1rem 0">Trouble signing in?</h1>
+                      <p style="padding-bottom: 16px">We've received a request to reset the password for the user account with this email.</p>
+                      <p style="padding-bottom: 16px"><a href="${process.env.CORS_ORIGIN}/change-password/${token}" target="_blank"
+                          style="padding: 12px 24px; border-radius: 4px; color: #FFF; background: #008080 ;display: inline-block;margin: 0.5rem 0;">Reset
+                          your password</a></p>
+                      <p style="padding-bottom: 16px">If you didn't ask to reset your password, you can ignore this email.</p>
+                      <p style="padding-bottom: 16px">Thanks,<br>The Reddit Clone team</p>
+                    </div>
+                  </div>
+                  <div style="padding-top: 20px; color: rgb(153, 153, 153); text-align: center;"></div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </td>
+      </tr>
+    </tbody>
+  </table>
+</body>
+
+</html>`;
+};
 //# sourceMappingURL=user.js.map

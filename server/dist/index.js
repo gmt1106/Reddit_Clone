@@ -5,6 +5,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.appDataSource = void 0;
 require("reflect-metadata");
+require("dotenv-safe/config");
 const typeorm_1 = require("typeorm");
 const constants_1 = require("./constants");
 const express_1 = __importDefault(require("express"));
@@ -25,9 +26,7 @@ const createUserLoader_1 = require("./utils/createUserLoader");
 const createUpVoteLoader_1 = require("./utils/createUpVoteLoader");
 exports.appDataSource = new typeorm_1.DataSource({
     type: "postgres",
-    username: "redditclone",
-    password: "redditclone1106",
-    database: "redditclone",
+    url: process.env.DATABASE_URL,
     entities: [Post_1.Post, User_1.User, UpVote_1.UpVote],
     synchronize: true,
     logging: true,
@@ -43,10 +42,10 @@ const main = async () => {
         .catch((error) => console.log("Error during Data Source initialization", error));
     const app = (0, express_1.default)();
     const RedisStore = (0, connect_redis_1.default)(express_session_1.default);
-    const redis = new ioredis_1.default();
+    const redis = new ioredis_1.default(process.env.REDIS_URI);
     app.use((0, cors_1.default)({
         credentials: true,
-        origin: ["http://localhost:3000", "https://studio.apollographql.com"],
+        origin: [process.env.CORS_ORIGIN],
     }));
     app.use((0, express_session_1.default)({
         name: constants_1.COOKIE_NAME,
@@ -54,9 +53,11 @@ const main = async () => {
         cookie: {
             maxAge: 1000 * 60 * 60 * 24 * 365 * 10,
             httpOnly: true,
+            sameSite: "lax",
+            secure: constants_1.__prod__,
         },
         saveUninitialized: false,
-        secret: "kadfljskdjfiwoenvskdnvkdsgjlei",
+        secret: process.env.SESSION_SECRET,
         resave: false,
     }));
     const apolloServer = new apollo_server_express_1.ApolloServer({
@@ -78,7 +79,7 @@ const main = async () => {
         app,
         cors: false,
     });
-    app.listen(4000, () => {
+    app.listen(parseInt(process.env.PORT), () => {
         console.log("🚀 server started on localhost:4000");
     });
 };
