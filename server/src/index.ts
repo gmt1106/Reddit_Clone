@@ -2,7 +2,6 @@ import "reflect-metadata"; // typeorm need this
 // read in .env file and fill up the environment variable, and also looks at the .env.example file and throw error if not all of the environment variables exist
 // In the prod, instead of this library, dokku will fill up the environment variables
 import "dotenv-safe/config";
-import { DataSource } from "typeorm";
 import { COOKIE_NAME, __prod__ } from "./constants";
 import express from "express";
 // make graphql end point
@@ -18,12 +17,9 @@ import connectRedis from "connect-redis";
 import { Context } from "./types";
 // to set cors globally in express middleware not in apollo server middleware
 import cors from "cors";
-import { Post } from "./entities/Post";
-import { User } from "./entities/User";
-import path from "path";
-import { UpVote } from "./entities/UpVote";
 import { createUserLoader } from "./utils/createUserLoader";
 import { createUpVoteLoader } from "./utils/createUpVoteLoader";
+import { appDataSource } from "./ormconfig";
 
 // things you want to store in session
 declare module "express-session" {
@@ -31,19 +27,6 @@ declare module "express-session" {
     userId: number;
   }
 }
-
-// TypeORM's DataSource holds the database connection settings and establishes initial database connection
-export const appDataSource = new DataSource({
-  type: "postgres",
-  // username: "redditclone",
-  // password: "redditclone1106",
-  // database: "redditclone",
-  url: process.env.DATABASE_URL,
-  entities: [Post, User, UpVote],
-  synchronize: true, // TypeORM will create table automatically, don't have to run migratioin
-  logging: true,
-  migrations: [path.join(__dirname, "./migrations/*")],
-});
 
 const main = async () => {
   // to initialize initial connection with the database, register all entities
@@ -79,6 +62,10 @@ const main = async () => {
   // We need becase session middleware will run inside the apollo
   const RedisStore = connectRedis(session);
   const redis = new Redis(process.env.REDIS_URI);
+
+  // To get cookies working in a proxy environment, we need to tell express how many proxy sitting in front
+  // We are going to have an engine x stting in front of our api.
+  app.set("proxy", 1);
 
   // ********** this is a setting for the Apollo Studio and next.js app local host to connect server by settting cors globally in express middleware **********
   app.use(

@@ -5,14 +5,14 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.createUpVoteLoader = void 0;
 const dataloader_1 = __importDefault(require("dataloader"));
-const __1 = require("../");
+const ormconfig_1 = require("../ormconfig");
 const UpVote_1 = require("../entities/UpVote");
 const createUpVoteLoader = () => new dataloader_1.default(async (keys) => {
     const keysUpdate = [];
     keys.forEach((key) => {
         keysUpdate.push(`${key.postId}|${key.userId}`);
     });
-    const queryBuilder = await __1.appDataSource
+    const queryBuilder = await ormconfig_1.appDataSource
         .getRepository(UpVote_1.UpVote)
         .createQueryBuilder("v")
         .where('(v."postId" || \'|\' || v."userId") in(:...keysUpdate)', {

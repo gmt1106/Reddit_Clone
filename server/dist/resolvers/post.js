@@ -16,9 +16,9 @@ exports.PostResolver = void 0;
 const Post_1 = require("../entities/Post");
 const type_graphql_1 = require("type-graphql");
 const isAuth_1 = require("../middleware/isAuth");
-const index_1 = require("../index");
 const UpVote_1 = require("../entities/UpVote");
 const User_1 = require("../entities/User");
+const ormconfig_1 = require("../ormconfig");
 let createPostInput = class createPostInput {
 };
 __decorate([
@@ -72,7 +72,7 @@ let PostResolver = class PostResolver {
         if (cursor) {
             replacements.push(new Date(parseInt(cursor)));
         }
-        const posts = await index_1.appDataSource.query(`
+        const posts = await ormconfig_1.appDataSource.query(`
     select p.*
     from post p
     ${cursor ? `where p."createdAt" < $2` : ""} 
@@ -91,7 +91,7 @@ let PostResolver = class PostResolver {
         return Post_1.Post.create(Object.assign(Object.assign({}, createPostInput), { creatorId: req.session.userId })).save();
     }
     async updatePost(id, title, text, { req }) {
-        const result = await index_1.appDataSource
+        const result = await ormconfig_1.appDataSource
             .createQueryBuilder()
             .update(Post_1.Post)
             .set({ title, text })
@@ -113,7 +113,7 @@ let PostResolver = class PostResolver {
         const { userId } = req.session;
         const upVote = await UpVote_1.UpVote.findOne({ where: { postId, userId } });
         if (upVote && upVote.value !== realValue) {
-            await index_1.appDataSource.transaction(async (tm) => {
+            await ormconfig_1.appDataSource.transaction(async (tm) => {
                 await tm.query(`
           update up_vote 
           set value = $1
@@ -127,7 +127,7 @@ let PostResolver = class PostResolver {
             });
         }
         else if (!upVote) {
-            await index_1.appDataSource.transaction(async (tm) => {
+            await ormconfig_1.appDataSource.transaction(async (tm) => {
                 await tm.query(`
         insert into up_vote ("userId", "postId", value)
         values ($1, $2, $3)

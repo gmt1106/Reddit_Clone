@@ -3,10 +3,8 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.appDataSource = void 0;
 require("reflect-metadata");
 require("dotenv-safe/config");
-const typeorm_1 = require("typeorm");
 const constants_1 = require("./constants");
 const express_1 = __importDefault(require("express"));
 const apollo_server_express_1 = require("apollo-server-express");
@@ -18,31 +16,21 @@ const ioredis_1 = __importDefault(require("ioredis"));
 const express_session_1 = __importDefault(require("express-session"));
 const connect_redis_1 = __importDefault(require("connect-redis"));
 const cors_1 = __importDefault(require("cors"));
-const Post_1 = require("./entities/Post");
-const User_1 = require("./entities/User");
-const path_1 = __importDefault(require("path"));
-const UpVote_1 = require("./entities/UpVote");
 const createUserLoader_1 = require("./utils/createUserLoader");
 const createUpVoteLoader_1 = require("./utils/createUpVoteLoader");
-exports.appDataSource = new typeorm_1.DataSource({
-    type: "postgres",
-    url: process.env.DATABASE_URL,
-    entities: [Post_1.Post, User_1.User, UpVote_1.UpVote],
-    synchronize: true,
-    logging: true,
-    migrations: [path_1.default.join(__dirname, "./migrations/*")],
-});
+const ormconfig_1 = require("./ormconfig");
 const main = async () => {
-    exports.appDataSource
+    ormconfig_1.appDataSource
         .initialize()
         .then(() => {
         console.log("Data Source has been initialized!");
-        exports.appDataSource.runMigrations();
+        ormconfig_1.appDataSource.runMigrations();
     })
         .catch((error) => console.log("Error during Data Source initialization", error));
     const app = (0, express_1.default)();
     const RedisStore = (0, connect_redis_1.default)(express_session_1.default);
     const redis = new ioredis_1.default(process.env.REDIS_URI);
+    app.set("proxy", 1);
     app.use((0, cors_1.default)({
         credentials: true,
         origin: [process.env.CORS_ORIGIN],
@@ -66,7 +54,7 @@ const main = async () => {
             validate: false,
         }),
         context: ({ req, res }) => ({
-            appDataSource: exports.appDataSource,
+            appDataSource: ormconfig_1.appDataSource,
             req,
             res,
             redis,

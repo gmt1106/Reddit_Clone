@@ -18,7 +18,6 @@ async function sendEmail(to, html) {
             pass: process.env.EMAIL_PASS,
         },
     });
-    console.log("password", process.env.EMAIL_PASS);
     const mailOptions = {
         from: `"Reddit Clone" <${process.env.EMAIL_USER}>`,
         to: to,

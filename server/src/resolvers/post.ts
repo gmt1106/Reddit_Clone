@@ -13,11 +13,11 @@ import {
   Root,
   ObjectType,
 } from "type-graphql";
-import { Context } from "src/types";
+import { Context } from "../types";
 import { isAuth } from "../middleware/isAuth";
-import { appDataSource } from "../index";
 import { UpVote } from "../entities/UpVote";
 import { User } from "../entities/User";
+import { appDataSource } from "../ormconfig";
 
 @InputType()
 class createPostInput {

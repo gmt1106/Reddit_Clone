@@ -1,5 +1,5 @@
 import DataLoader from "dataloader";
-import { appDataSource } from "../";
+import { appDataSource } from "../ormconfig";
 import { UpVote } from "../entities/UpVote";
 
 export const createUpVoteLoader = () =>

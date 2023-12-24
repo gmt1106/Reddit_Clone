@@ -23,7 +23,6 @@ export async function sendEmail(to: string, html: string) {
     },
   });
 
-  console.log("password", process.env.EMAIL_PASS);
   // defined transport object
   const mailOptions = {
     from: `"Reddit Clone" <${process.env.EMAIL_USER}>`, // sender address
