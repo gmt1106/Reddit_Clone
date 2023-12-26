@@ -61,7 +61,7 @@ const main = async () => {
   // Session middleware will run before apollo middleware.
   // We need becase session middleware will run inside the apollo
   const RedisStore = connectRedis(session);
-  const redis = new Redis(process.env.REDIS_URI);
+  const redis = new Redis(process.env.REDIS_URL);
 
   // To get cookies working in a proxy environment, we need to tell express how many proxy sitting in front
   // We are going to have an engine x stting in front of our api.
