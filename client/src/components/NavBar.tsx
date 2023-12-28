@@ -1,4 +1,4 @@
-import { Box, Link, Flex, Button, Heading } from "@chakra-ui/react";
+import { Box, Flex, Button, Heading } from "@chakra-ui/react";
 import React from "react";
 // The reason that we use NextLink is it uses client side routing
 // How to use it is that wrap any link with NextLink
@@ -39,27 +39,23 @@ export const NavBar: React.FC<NavBarProps> = ({}) => {
   } else if (!data?.me) {
     body = (
       <>
-        <NextLink href="/login">
-          <Link color="white" mr={4}>
-            login
-          </Link>
-        </NextLink>
+        <Flex>
+          <Box color="white" mr={4}>
+            <NextLink href="/login">login</NextLink>
+          </Box>
 
-        <NextLink href="/register">
-          <Link color="white" mr={4}>
-            register
-          </Link>
-        </NextLink>
+          <Box color="white" mr={4}>
+            <NextLink href="/register">register</NextLink>
+          </Box>
+        </Flex>
       </>
     );
   } else {
     body = (
       <Flex align="center">
-        <NextLink href="/create-post">
-          <Button as={Link} mr={4}>
-            create post
-          </Button>
-        </NextLink>
+        <Button mr={4} onClick={() => router.push("/create-post")}>
+          create post
+        </Button>
         <Box mr={4}>{data.me.username}</Box>
         <Button
           color="white"
@@ -78,11 +74,11 @@ export const NavBar: React.FC<NavBarProps> = ({}) => {
   return (
     <Flex zIndex={1} position="sticky" top={0} bg="teal" p={4} align="center">
       <Flex flex={1} m="auto" align="center" maxW={800}>
-        <NextLink href={"/"}>
-          <Link color="white">
+        <Box color="white">
+          <NextLink href={"/"}>
             <Heading>Reddit Clone</Heading>
-          </Link>
-        </NextLink>
+          </NextLink>
+        </Box>
         <Box ml={"auto"}>{body}</Box>
       </Flex>
     </Flex>

@@ -1,16 +1,16 @@
 // the file name [token].tsx is a convension of Next.js that can be used when you want a variable in your url
-import { Box, Button, Link, Flex } from "@chakra-ui/react";
-import { Formik, Form } from "formik";
+import { Box, Button } from "@chakra-ui/react";
+import { Form, Formik } from "formik";
 import { NextPage } from "next";
-import React, { useState } from "react";
+import { withUrqlClient } from "next-urql";
+import NextLink from "next/link";
+import { useRouter } from "next/router";
+import { useState } from "react";
 import { InputField } from "../../components/InputField";
 import { Wrapper } from "../../components/Wrapper";
 import { useChangePasswordMutation } from "../../generated/graphql";
-import { toErrorMap } from "../../utils/toErrorMap";
-import { withUrqlClient } from "next-urql";
 import { createUrqlClient } from "../../utils/createUrqlClient";
-import { useRouter } from "next/router";
-import NextLink from "next/link";
+import { toErrorMap } from "../../utils/toErrorMap";
 
 // The parameter token is defined below with ChangePassword.getInitialProps = () => {}
 const ChangePassword: NextPage<{ token: string }> = () => {
@@ -63,7 +63,7 @@ const ChangePassword: NextPage<{ token: string }> = () => {
                   {tokenError}
                 </Box>
                 <NextLink href={"/forgot-password"}>
-                  <Link>click here to get a new link</Link>
+                  click here to get a new link
                 </NextLink>
               </Box>
             ) : null}

@@ -1,12 +1,4 @@
-import {
-  Box,
-  Button,
-  Flex,
-  Heading,
-  Link,
-  Stack,
-  Text,
-} from "@chakra-ui/react";
+import { Box, Button, Flex, Heading, Stack, Text } from "@chakra-ui/react";
 import { withUrqlClient } from "next-urql";
 import NextLink from "next/link";
 import { useState } from "react";
@@ -56,9 +48,7 @@ const Index = () => {
                   <Box flex={1}>
                     {/* Linking to dynamic path: https://nextjs.org/docs/pages/building-your-application/routing/linking-and-navigating#linking-to-dynamic-paths */}
                     <NextLink href={`/post/${encodeURIComponent(post.id)}`}>
-                      <Link>
-                        <Heading fontSize="xl">{post.title}</Heading>
-                      </Link>
+                      <Heading fontSize="xl">{post.title}</Heading>
                     </NextLink>
                     <Text>Posted by {post.creator.username}</Text>
                     <Flex align="center">
