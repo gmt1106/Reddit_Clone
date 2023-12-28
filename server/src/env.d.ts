@@ -10,6 +10,7 @@ declare global {
       EMAIL_HOST: string;
       EMAIL_USER: string;
       EMAIL_PASS: string;
+      COOKIE_DOMAIN: string;
     }
   }
 }

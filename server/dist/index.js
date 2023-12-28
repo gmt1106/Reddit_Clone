@@ -30,7 +30,7 @@ const main = async () => {
     const app = (0, express_1.default)();
     const RedisStore = (0, connect_redis_1.default)(express_session_1.default);
     const redis = new ioredis_1.default(process.env.REDIS_URL);
-    app.set("proxy", 1);
+    app.set("trust proxy", 1);
     app.use((0, cors_1.default)({
         credentials: true,
         origin: [process.env.CORS_ORIGIN],
@@ -43,6 +43,7 @@ const main = async () => {
             httpOnly: true,
             sameSite: "lax",
             secure: constants_1.__prod__,
+            domain: constants_1.__prod__ ? process.env.COOKIE_DOMAIN : undefined,
         },
         saveUninitialized: false,
         secret: process.env.SESSION_SECRET,

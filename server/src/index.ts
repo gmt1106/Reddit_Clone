@@ -88,7 +88,8 @@ const main = async () => {
         maxAge: 1000 * 60 * 60 * 24 * 365 * 10, // 10 years
         httpOnly: true, // from the javascript code in the frontend, can't access the cookie. This is good for security reason.
         sameSite: "lax", // protecting in csrf
-        secure: __prod__, // cookie only wors in https. Off when it is connect to local host
+        secure: __prod__, // cookie only works in https. Off when it is connect to local host
+        domain: __prod__ ? process.env.COOKIE_DOMAIN : undefined,
         // ********** this is a setting for the Apollo Studio to send cookies **********
         // sameSite: "none",
         // secure: true,
