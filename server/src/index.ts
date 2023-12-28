@@ -65,7 +65,7 @@ const main = async () => {
 
   // To get cookies working in a proxy environment, we need to tell express how many proxy sitting in front
   // We are going to have an engine x stting in front of our api.
-  app.set("proxy", 1);
+  app.set("trust proxy", 1);
 
   // ********** this is a setting for the Apollo Studio and next.js app local host to connect server by settting cors globally in express middleware **********
   app.use(
