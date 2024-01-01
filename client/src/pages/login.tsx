@@ -53,14 +53,19 @@ const Login: React.FC<{}> = ({}) => {
             <Flex mt={2} ml="auto">
               <NextLink href={"/forgot-password"}>forgot password?</NextLink>
             </Flex>
-            <Button
-              mt={4}
-              type="submit"
-              isLoading={isSubmitting}
-              colorScheme="teal"
-            >
-              login
-            </Button>
+            <Flex>
+              <Button
+                mt={4}
+                type="submit"
+                isLoading={isSubmitting}
+                colorScheme="teal"
+              >
+                login
+              </Button>
+              <Box ml={4} mt="auto">
+                <NextLink href={"/register"}>Not a user yet?</NextLink>
+              </Box>
+            </Flex>
           </Form>
         )}
       </Formik>

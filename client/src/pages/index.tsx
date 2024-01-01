@@ -6,7 +6,7 @@ import { EditDeletePostButtons } from "../components/EditDeletePostButtons";
 import { Layout } from "../components/Layout";
 import { UpvoteSection } from "../components/UpvoteSection";
 import { PAGINATION_LIMIT } from "../constants";
-import { usePostsQuery } from "../generated/graphql";
+import { useMeQuery, usePostsQuery } from "../generated/graphql";
 import { createUrqlClient } from "../utils/createUrqlClient";
 
 const Index = () => {
@@ -25,67 +25,93 @@ const Index = () => {
     variables,
   });
 
-  if (!fetching && !data) {
-    return (
-      <div>
-        <div> you got query failed for some reason</div>
-        <div>{error?.message}</div>
-      </div>
-    );
-  }
+  const [{ data: userData }] = useMeQuery();
+
+  // if (!fetching && !data) {
+  //   return (
+  //     <div>
+  //       <div> you got query failed for some reason</div>
+  //       <div>{error?.message}</div>
+  //     </div>
+  //   );
+  // }
+  console.log("userDate: ", userData?.me);
+
   return (
     <Layout>
-      {fetching && !data ? (
-        <div>loading...</div>
+      {!userData?.me ? (
+        <>
+          <Text fontSize="4xl">Welcome to Reddit Clone!</Text>
+          <Text fontSize="2xl">
+            Please log in to see other's posts and create your posts. If you are
+            not a user yet, you can register with an email address.
+          </Text>
+        </>
       ) : (
-        <Stack>
-          {
-            // after doing post delete cache update, there will be some posts that are null
-            data!.posts.posts.map((post) =>
-              !post ? null : (
-                <Flex key={post.id} p={5} shadow="md" borderWidth="1px">
-                  <UpvoteSection post={post} />
-                  <Box flex={1}>
-                    {/* Linking to dynamic path: https://nextjs.org/docs/pages/building-your-application/routing/linking-and-navigating#linking-to-dynamic-paths */}
-                    <NextLink href={`/post/${encodeURIComponent(post.id)}`}>
-                      <Heading fontSize="xl">{post.title}</Heading>
-                    </NextLink>
-                    <Text>Posted by {post.creator.username}</Text>
-                    <Flex align="center">
-                      <Text flex={1} mt={4}>
-                        {post.textSnippet}
-                      </Text>
-                      <Box mt="auto">
-                        <EditDeletePostButtons
-                          id={post.id}
-                          creatorId={post.creatorId}
-                        />
+        <>
+          {!data ? (
+            fetching ? (
+              <Text>loading...</Text>
+            ) : (
+              <>
+                <div>
+                  <Text> you got query failed for some reason</Text>
+                </div>
+                {console.log(error?.message)}
+              </>
+            )
+          ) : (
+            <Stack>
+              {
+                // after doing post delete cache update, there will be some posts that are null
+                data!.posts.posts.map((post) =>
+                  !post ? null : (
+                    <Flex key={post.id} p={5} shadow="md" borderWidth="1px">
+                      <UpvoteSection post={post} />
+                      <Box flex={1}>
+                        {/* Linking to dynamic path: https://nextjs.org/docs/pages/building-your-application/routing/linking-and-navigating#linking-to-dynamic-paths */}
+                        <NextLink href={`/post/${encodeURIComponent(post.id)}`}>
+                          <Heading fontSize="xl">{post.title}</Heading>
+                        </NextLink>
+                        <Text>Posted by {post.creator.username}</Text>
+                        <Flex align="center">
+                          <Text flex={1} mt={4}>
+                            {post.textSnippet}
+                          </Text>
+                          <Box mt="auto">
+                            <EditDeletePostButtons
+                              id={post.id}
+                              creatorId={post.creatorId}
+                            />
+                          </Box>
+                        </Flex>
                       </Box>
                     </Flex>
-                  </Box>
-                </Flex>
-              )
-            )
-          }
-        </Stack>
+                  )
+                )
+              }
+            </Stack>
+          )}
+          {data && data.posts.hasMore ? (
+            <Flex>
+              <Button
+                onClick={() => {
+                  setVariables({
+                    limit: variables.limit, // keep the same limit
+                    cursor:
+                      data.posts.posts[data.posts.posts.length - 1].createdAt, // the createdAt field of the last element in the posts
+                  });
+                }}
+                isLoading={fetching}
+                m="auto"
+                my={8}
+              >
+                Load more
+              </Button>
+            </Flex>
+          ) : null}
+        </>
       )}
-      {data && data.posts.hasMore ? (
-        <Flex>
-          <Button
-            onClick={() => {
-              setVariables({
-                limit: variables.limit, // keep the same limit
-                cursor: data.posts.posts[data.posts.posts.length - 1].createdAt, // the createdAt field of the last element in the posts
-              });
-            }}
-            isLoading={fetching}
-            m="auto"
-            my={8}
-          >
-            Load more
-          </Button>
-        </Flex>
-      ) : null}
     </Layout>
   );
 };

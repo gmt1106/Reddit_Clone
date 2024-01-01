@@ -1,6 +1,6 @@
 import React from "react";
 import { Formik, Form } from "formik";
-import { Box, Button } from "@chakra-ui/react";
+import { Box, Button, Text } from "@chakra-ui/react";
 import { Wrapper } from "../components/Wrapper";
 import { InputField } from "../components/InputField";
 import { useRegisterMutation } from "../generated/graphql";
@@ -67,6 +67,10 @@ const Register: React.FC<registerProps> = ({}) => {
               label="Email"
               type="email"
             />
+            <Text fontSize="sm">
+              This email will be used to reset your password when you forget
+              your password.
+            </Text>
             <Box mt={4}>
               <InputField
                 name="username"

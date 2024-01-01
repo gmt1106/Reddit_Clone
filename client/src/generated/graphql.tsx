@@ -146,7 +146,13 @@ export type CreatePostInput = {
 
 export type ErrorFragment = { __typename?: 'FieldError', field: string, message: string };
 
-export type PostSnippetFragment = { __typename?: 'Post', id: number, title: string, textSnippet: string, creatorId: number, points: number, createdAt: string, updatedAt: string, voteStatus?: number | null, creator: { __typename?: 'User', id: number, username: string } };
+export type PostSnippetFragment = 
+{ __typename?: 'Post', id: number, 
+title: string, textSnippet: string, 
+creatorId: number, points: number, 
+createdAt: string, updatedAt: string, 
+voteStatus?: number | null, creator: 
+{ __typename?: 'User', id: number, username: string } };
 
 export type UserInfoFragment = { __typename?: 'User', id: number, username: string };
 
