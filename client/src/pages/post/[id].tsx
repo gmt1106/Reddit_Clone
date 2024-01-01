@@ -1,7 +1,8 @@
-import { Box, Heading } from "@chakra-ui/react";
+import { Box, Flex, Heading } from "@chakra-ui/react";
 import { withUrqlClient } from "next-urql";
 import { EditDeletePostButtons } from "../../components/EditDeletePostButtons";
 import { Layout } from "../../components/Layout";
+import { UpvoteSection } from "../../components/UpvoteSection";
 import { createUrqlClient } from "../../utils/createUrqlClient";
 import { useGetPostFromUrl } from "../../utils/useGetPostFromUrl";
 
@@ -23,12 +24,19 @@ export const Post = ({}) => {
   }
   return (
     <Layout>
-      <Heading mb={4}>{data?.post?.title}</Heading>
-      <Box mb={4}> {data?.post?.text}</Box>
-      <EditDeletePostButtons
-        id={data?.post?.id}
-        creatorId={data?.post?.creatorId}
-      />
+      <Flex align="center">
+        <Box>
+          <UpvoteSection post={{ textSnippet: "", ...data?.post }} />
+        </Box>
+        <Box>
+          <Heading mb={4}>{data?.post?.title}</Heading>
+          <Box mb={4}> {data?.post?.text}</Box>
+          <EditDeletePostButtons
+            id={data?.post?.id}
+            creatorId={data?.post?.creatorId}
+          />
+        </Box>
+      </Flex>
     </Layout>
   );
 };
