@@ -1,31 +1,36 @@
 import { Box, Button, Flex, Heading, Stack, Text } from "@chakra-ui/react";
-import { withUrqlClient } from "next-urql";
 import NextLink from "next/link";
-import { useState } from "react";
 import { EditDeletePostButtons } from "../components/EditDeletePostButtons";
 import { Layout } from "../components/Layout";
 import { UpvoteSection } from "../components/UpvoteSection";
 import { PAGINATION_LIMIT } from "../constants";
 import { useMeQuery, usePostsQuery } from "../generated/graphql";
-import { createUrqlClient } from "../utils/createUrqlClient";
+import { withApollo } from "../utils/createApolloClient";
 
 const Index = () => {
   // This is to support pagination. Using setVariables() get the next page.
-  const [variables, setVariables] = useState({
-    limit: PAGINATION_LIMIT,
-    cursor: null as null | string,
-  });
+  // const [variables, setVariables] = useState({
+  //   limit: PAGINATION_LIMIT,
+  //   cursor: null as null | string,
+  // });
 
   // console.log(variables);
   // {limit: 10, cursor: null}
 
   // Data will be null by default and fetching will be true. Then we will show loading...
   // We want load more button only when we have data.
-  const [{ data, error, fetching }] = usePostsQuery({
-    variables,
+  // fetchMore is for apollo pagination
+  const { data, error, loading, fetchMore, variables } = usePostsQuery({
+    // With apollo, directly stick it here
+    variables: {
+      limit: PAGINATION_LIMIT,
+      cursor: null,
+    },
+    // loading will become try when we press load more, so we can see loading indecator on the button
+    notifyOnNetworkStatusChange: true,
   });
 
-  const [{ data: userData }] = useMeQuery();
+  const { data: userData } = useMeQuery();
 
   // if (!fetching && !data) {
   //   return (
@@ -35,7 +40,7 @@ const Index = () => {
   //     </div>
   //   );
   // }
-  console.log("userDate: ", userData?.me);
+  // console.log("userData: ", userData?.me);
 
   return (
     <Layout>
@@ -50,7 +55,7 @@ const Index = () => {
       ) : (
         <>
           {!data ? (
-            fetching ? (
+            loading ? (
               <Text>loading...</Text>
             ) : (
               <>
@@ -96,13 +101,39 @@ const Index = () => {
             <Flex>
               <Button
                 onClick={() => {
-                  setVariables({
-                    limit: variables.limit, // keep the same limit
-                    cursor:
-                      data.posts.posts[data.posts.posts.length - 1].createdAt, // the createdAt field of the last element in the posts
+                  fetchMore({
+                    variables: {
+                      limit: variables?.limit, // keep the same limit
+                      cursor:
+                        data.posts.posts[data.posts.posts.length - 1].createdAt, // the createdAt field of the last element in the posts}
+                    },
+                    // ****** updateQuery is deprecated ******
+                    // updateQuery: (
+                    //   previousValue,
+                    //   { fetchMoreResult }
+                    // ): PostsQuery => {
+                    //   // take two parameters and merge them together
+
+                    //   if (!fetchMoreResult) {
+                    //     return previousValue as PostsQuery;
+                    //   }
+
+                    //   return {
+                    //     __typename: "Query",
+                    //     posts: {
+                    //       __typename: "PaginatedPosts",
+                    //       hasMore: (fetchMoreResult as PostsQuery).posts
+                    //         .hasMore,
+                    //       posts: [
+                    //         ...(previousValue as PostsQuery).posts.posts,
+                    //         ...(fetchMoreResult as PostsQuery).posts.posts,
+                    //       ],
+                    //     },
+                    //   };
+                    // },
                   });
                 }}
-                isLoading={fetching}
+                isLoading={loading}
                 m="auto"
                 my={8}
               >
@@ -119,7 +150,9 @@ const Index = () => {
 // Server-Side Rendering (SSR) with URQL and Next.js
 // SSR is on when {ssr: true} is included
 // https://formidable.com/open-source/urql/docs/advanced/server-side-rendering/
-export default withUrqlClient(createUrqlClient, { ssr: true })(Index);
+
+// switch from urql to apollo
+export default withApollo({ ssr: true })(Index);
 
 // To see the difference between the SSR being on and being off
 // 1. Make this homepage to fetch posts

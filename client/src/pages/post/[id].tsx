@@ -1,14 +1,13 @@
 import { Box, Flex, Heading } from "@chakra-ui/react";
-import { withUrqlClient } from "next-urql";
 import { EditDeletePostButtons } from "../../components/EditDeletePostButtons";
 import { Layout } from "../../components/Layout";
 import { UpvoteSection } from "../../components/UpvoteSection";
-import { createUrqlClient } from "../../utils/createUrqlClient";
 import { useGetPostFromUrl } from "../../utils/useGetPostFromUrl";
+import { withApollo } from "../../utils/createApolloClient";
 
 export const Post = ({}) => {
-  const [{ data, error, fetching }] = useGetPostFromUrl();
-  if (fetching) {
+  const { data, error, loading } = useGetPostFromUrl();
+  if (loading) {
     return <Layout>loading...</Layout>;
   }
   if (error) {
@@ -42,4 +41,4 @@ export const Post = ({}) => {
 };
 
 // We want good SEO for post conents
-export default withUrqlClient(createUrqlClient, { ssr: true })(Post);
+export default withApollo({ ssr: true })(Post);

@@ -14,8 +14,8 @@ export const EditDeletePostButtons: React.FC<EditDeletePostButtonsProps> = ({
   creatorId,
 }) => {
   // fetch logged in user to disable delete and edit buttons
-  const [{ data: loggedInUserData }] = useMeQuery();
-  const [, deletePost] = useDeletePostMutation();
+  const { data: loggedInUserData } = useMeQuery();
+  const [deletePost] = useDeletePostMutation();
 
   if (loggedInUserData?.me?.id !== creatorId) {
     return null;
@@ -28,7 +28,14 @@ export const EditDeletePostButtons: React.FC<EditDeletePostButtonsProps> = ({
       <DeleteIcon
         aria-label="Delete Post"
         onClick={() => {
-          deletePost({ id: id });
+          deletePost({
+            variables: { id: id },
+            // update cache after mutation using update function.
+            update: (cache) => {
+              // evict() is the same as urql invalidate(). It makes the specified post to null.
+              cache.evict({ id: "Post:" + id });
+            },
+          });
         }}
       />
     </Box>
