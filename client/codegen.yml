@@ -6,4 +6,5 @@ generates:
     plugins:
       - "typescript"
       - "typescript-operations"
-      - "typescript-urql"  #this is added
+      # - "typescript-urql"  #this is added
+      - "typescript-react-apollo" #this is added

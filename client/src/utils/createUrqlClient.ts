@@ -184,7 +184,7 @@ export const createUrqlClient = (ssrExchange: any, ctx: any) => {
         },
         updates: {
           Mutation: {
-            // this is the function that we can do update cache
+            // this is the function that we can do to update cache
             // more precisely, this is going to run whenever LoginMutation runs and it is going to update the cache
             // update the cache means that updating the MeQuery because in the NavBar.txs, NavBar uses the result of the MeQuery.
             // the name of the funciton (login) need to match with the mutation after which we want to do cache update
@@ -285,7 +285,7 @@ export const createUrqlClient = (ssrExchange: any, ctx: any) => {
               }
             },
             deletePost: (_result, args, cache, _info) => {
-              // Cache.invalidate make the specified post to null
+              // Cache.invalidate makes the specified post to null
               cache.invalidate({
                 __typename: "Post",
                 id: (args as DeletePostMutationVariables).id,

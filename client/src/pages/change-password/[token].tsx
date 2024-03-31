@@ -2,19 +2,22 @@
 import { Box, Button } from "@chakra-ui/react";
 import { Form, Formik } from "formik";
 import { NextPage } from "next";
-import { withUrqlClient } from "next-urql";
 import NextLink from "next/link";
 import { useRouter } from "next/router";
 import { useState } from "react";
 import { InputField } from "../../components/InputField";
 import { Wrapper } from "../../components/Wrapper";
-import { useChangePasswordMutation } from "../../generated/graphql";
-import { createUrqlClient } from "../../utils/createUrqlClient";
+import {
+  MeDocument,
+  MeQuery,
+  useChangePasswordMutation,
+} from "../../generated/graphql";
 import { toErrorMap } from "../../utils/toErrorMap";
+import { withApollo } from "../../utils/createApolloClient";
 
 // The parameter token is defined below with ChangePassword.getInitialProps = () => {}
 const ChangePassword: NextPage<{ token: string }> = () => {
-  const [, changePassword] = useChangePasswordMutation();
+  const [changePassword] = useChangePasswordMutation();
   const [tokenError, setTokenError] = useState("");
 
   // Actaully the router is saving the query parameter
@@ -31,10 +34,27 @@ const ChangePassword: NextPage<{ token: string }> = () => {
             return;
           }
           const response = await changePassword({
-            newPassword: values.newPassword,
-            // the empty token will throw back an error
-            token:
-              typeof router.query.token === "string" ? router.query.token : "",
+            variables: {
+              newPassword: values.newPassword,
+              // the empty token will throw back an error
+              token:
+                typeof router.query.token === "string"
+                  ? router.query.token
+                  : "",
+            },
+            // update cache after mutation using update function.
+            // the second argument to update function is the result of the mutation.
+            // the purpose of this is to automatically log the user in.
+            update: (cache, { data }) => {
+              // data is the result of the register, and this sticks that in the cache for me Query.
+              cache.writeQuery<MeQuery>({
+                query: MeDocument,
+                data: {
+                  __typename: "Query",
+                  me: data?.changePassword.user,
+                },
+              });
+            },
           });
           if (response.data?.changePassword.errors) {
             const errorMap = toErrorMap(response.data.changePassword.errors);
@@ -103,4 +123,4 @@ const ChangePassword: NextPage<{ token: string }> = () => {
 
 // next.js also has getServerProps() similar to getInitialProps() that runs in the server
 
-export default withUrqlClient(createUrqlClient)(ChangePassword);
+export default withApollo({ ssr: false })(ChangePassword);

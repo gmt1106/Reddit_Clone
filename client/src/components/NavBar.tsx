@@ -6,6 +6,7 @@ import NextLink from "next/link";
 import { useLogoutMutation, useMeQuery } from "../generated/graphql";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/router";
+import { useApolloClient } from "@apollo/client";
 
 interface NavBarProps {}
 
@@ -21,8 +22,8 @@ export const NavBar: React.FC<NavBarProps> = ({}) => {
   // Hydration, which is a feature of React, is the first render in the Browser
   const [isServer, setIsServer] = useState(true);
   useEffect(() => setIsServer(false), []);
-  const [{ data, fetching }] = useMeQuery({
-    pause: isServer, // now when I am in server, data will be undefined instead of null, which mean it is not runing request anymore.
+  const { data, loading } = useMeQuery({
+    skip: isServer, // now when I am in server, data will be undefined instead of null, which mean it is not runing request anymore.
 
     // now we can remove this pause since we now do the server side render Cookie Forwarding to set voteStatus value in Post entities.
     // But still we don't want to do the server side render so won't remove it.
@@ -30,11 +31,13 @@ export const NavBar: React.FC<NavBarProps> = ({}) => {
   const router = useRouter();
 
   // Need to see if it is loading (fetching)
-  const [{ fetching: logoutFetching }, logout] = useLogoutMutation();
+  const [logout, { loading: logoutFetching }] = useLogoutMutation();
+  // This is the hook we can get access to the current client
+  const apolloClient = useApolloClient();
   let body;
   // There are three states:
   // 1. loading  2. not logged in  3. logged in
-  if (fetching) {
+  if (loading) {
     body = null;
   } else if (!data?.me) {
     body = (
@@ -62,7 +65,9 @@ export const NavBar: React.FC<NavBarProps> = ({}) => {
           variant={"link"}
           onClick={async () => {
             await logout();
-            router.reload();
+            // router.reload();
+            // instead of reload as above line, reset cache (no need for update cache after logout mutation)
+            await apolloClient.resetStore();
           }}
           isLoading={logoutFetching}
         >
