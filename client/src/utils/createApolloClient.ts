@@ -4,7 +4,6 @@ import { ApolloClient, createHttpLink, InMemoryCache } from "@apollo/client";
 import { setContext } from "@apollo/client/link/context";
 import { withApollo as createWithApollo } from "next-apollo";
 import { PaginatedPosts } from "../generated/graphql";
-import { NextPageContext } from "next";
 
 const httpLink = createHttpLink({
   // uri and credentials are all match with the createUrqlClient
@@ -26,7 +25,7 @@ const authLink = setContext((_, { headers }) => {
   };
 });
 
-const createClient = (ctx: NextPageContext) =>
+const createClient = () =>
   new ApolloClient({
     link: authLink.concat(httpLink),
     // ****** This is how to set up cache instead of deprecated updateQuery in index.tsx ******
